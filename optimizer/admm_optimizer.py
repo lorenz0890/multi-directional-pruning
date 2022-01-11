@@ -5,7 +5,7 @@ I modified optimizer to use name of the parameter for preventing prunned weights
 
 import math
 from collections import defaultdict
-from torch._six import container_abcs
+import collections.abc as container_abcs
 import torch
 from copy import deepcopy
 from itertools import chain
@@ -181,7 +181,7 @@ class NameOptimizer(object):
         r"""Add a param group to the :class:`Optimizer` s `param_groups`.
 
         This can be useful when fine tuning a pre-trained network as frozen layers can be made
-        trainable and added to the :class:`Optimizer` as training progresses.
+        trainable and added to the :class:`Optimizer` as experiments progresses.
 
         Arguments:
             param_group (dict): Specifies what Tensors should be optimized along with group

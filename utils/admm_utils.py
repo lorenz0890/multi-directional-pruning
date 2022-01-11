@@ -3,27 +3,27 @@ import torch.nn.functional as F
 import numpy as np
 
 
-def regularized_nll_loss(args, model, output, target):
+def regularized_nll_loss(config, model, output, target):
     index = 0
     loss = F.nll_loss(output, target)
-    if args.l2:
+    if config.get('ADMM', 'l2', bool):
         for name, param in model.named_parameters():
             if name.split('.')[-1] == "weight":
-                loss += args.alpha * param.norm()
+                loss += config.get('ADMM', 'alpha', float) * param.norm()
                 index += 1
     return loss
 
 
-def admm_loss(args, device, model, Z, U, output, target):
+def admm_loss(config, device, model, Z, U, output, target):
     idx = 0
     loss = F.nll_loss(output, target)
     for name, param in model.named_parameters():
         if name.split('.')[-1] == "weight":
             u = U[idx].to(device)
             z = Z[idx].to(device)
-            loss += args.rho / 2 * (param - z + u).norm()
-            if args.l2:
-                loss += args.alpha * param.norm()
+            loss += config.get('ADMM', 'rho', float) / 2 * (param - z + u).norm()
+            if config.get('ADMM', 'l2', bool):
+                loss +=  config.get('ADMM', 'alpha', float) * param.norm()
             idx += 1
     return loss
 
@@ -46,12 +46,12 @@ def update_X(model):
     return X
 
 
-def update_Z(X, U, args):
+def update_Z(X, U, config):
     new_Z = ()
     idx = 0
     for x, u in zip(X, U):
         z = x + u
-        pcen = np.percentile(abs(z), 100*args.percent[idx])
+        pcen = np.percentile(abs(z), 100 *  config.get('ADMM', 'alpha', lambda a : [float(b) for b in str(a).split(',')])[idx])
         under_threshold = abs(z) < pcen
         z.data[under_threshold] = 0
         new_Z += (z,)
@@ -59,9 +59,9 @@ def update_Z(X, U, args):
     return new_Z
 
 
-def update_Z_l1(X, U, args):
+def update_Z_l1(X, U, config):
     new_Z = ()
-    delta = args.alpha / args.rho
+    delta = config.get('ADMM', 'alpha', float)  / config.get('ADMM', 'rho', float)
     for x, u in zip(X, U):
         z = x + u
         new_z = z.clone()
@@ -101,14 +101,14 @@ def prune_l1_weight(weight, device, delta):
     return mask
 
 
-def apply_prune(model, device, args):
+def apply_prune(model, device, config):
     # returns dictionary of non_zero_values' indices
     print("Apply Pruning based on percentile")
     dict_mask = {}
     idx = 0
     for name, param in model.named_parameters():
         if name.split('.')[-1] == "weight":
-            mask = prune_weight(param, device, args.percent[idx])
+            mask = prune_weight(param, device, config.get('ADMM', 'alpha', lambda a : [float(b) for b in str(a).split(',')])[idx])
             param.data.mul_(mask)
             # param.data = torch.Tensor(weight_pruned).to(device)
             dict_mask[name] = mask
@@ -116,8 +116,8 @@ def apply_prune(model, device, args):
     return dict_mask
 
 
-def apply_l1_prune(model, device, args):
-    delta = args.alpha / args.rho
+def apply_l1_prune(model, device, config):
+    delta = config.get('ADMM', 'alpha', float)  / config.get('ADMM', 'rho', float)
     print("Apply Pruning based on percentile")
     dict_mask = {}
     idx = 0
