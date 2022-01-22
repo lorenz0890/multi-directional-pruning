@@ -1,8 +1,7 @@
 from torchvision import datasets, transforms
 import torch
 
-from experiments import ADMMRetrain
-from model import LeNet, AlexNet
+from experiments import ADMMRetrain, ADMMIntra, GDTopK, MCGDTopK, MCGDTopKACDK
 from utils import DataFactory, ModelFactory
 
 
@@ -17,5 +16,13 @@ class ExperimentFactory:
         model = self.model_factory.get_model(config)
         if config.get('EXPERIMENT', 'name', str) == 'admm_retrain':
             experiment = ADMMRetrain(model, train_loader, test_loader, config)
+        if config.get('EXPERIMENT', 'name', str) == 'admm_intra':
+            experiment = ADMMIntra(model, train_loader, test_loader, config)
+        if config.get('EXPERIMENT', 'name', str) == 'gd_top_k':
+            experiment = GDTopK(model, train_loader, test_loader, config)
+        if config.get('EXPERIMENT', 'name', str) == 'gd_top_k_mc':
+            experiment = MCGDTopK(model, train_loader, test_loader, config)
+        if config.get('EXPERIMENT', 'name', str) == 'gd_top_k_mc_ac_dk':
+            experiment = MCGDTopKACDK(model, train_loader, test_loader, config)
 
         return experiment

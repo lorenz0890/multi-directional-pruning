@@ -1,3 +1,4 @@
+import torchvision.models
 from torchvision import datasets, transforms
 import torch
 
@@ -16,4 +17,6 @@ class ModelFactory:
             model = LeNet().to(device)
         elif config.get('EXPERIMENT', 'model', str) == 'alexnet':
             model = AlexNet().to(device)
+        elif config.get('EXPERIMENT', 'model', str) == 'vgg16':
+            model = torchvision.models.vgg16().to(device)
         return model

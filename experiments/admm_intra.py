@@ -11,9 +11,7 @@ from utils import regularized_nll_loss, admm_loss, \
 from torchvision import datasets, transforms
 from tqdm import tqdm
 
-
-class ADMMRetrain:
-    # Original
+class ADMMIntra:
     def __init__(self, model, train_loader, test_loader, config):
         self.model = model
         self.train_loader = train_loader
@@ -24,18 +22,18 @@ class ADMMRetrain:
         self.device = torch.device("cuda" if self.use_cuda else "cpu")
         self.performance_model = PerformanceModel(model, train_loader)
 
-
-
-
     def dispatch(self):
         torch.manual_seed(self.config.get('OTHER', 'seed', int))
         optimizer = PruneAdam(self.model.named_parameters(), lr=self.config.get('ADMM', 'lr', float),
                               eps=self.config.get('ADMM', 'adam_eps', float))
-        self.__train(self.config, self.model, self.device, self.train_loader, self.test_loader, optimizer)
-        mask = apply_l1_prune(self.model, self.device, self.config) if self.config.get('ADMM', 'l1', bool) else apply_prune(self.model, self.device, self.config)
-        print_prune(self.model)
-        self.__test(self.config, self.model, self.device, self.test_loader)
-        self.__retrain(self.config, self.model, mask, self.device, self.train_loader, self.test_loader, optimizer)
+
+        for i in range(self.config.get('ADMM', 'repeat', int)):
+            self.__train(self.config, self.model, self.device, self.train_loader, self.test_loader, optimizer)
+            mask = apply_l1_prune(self.model, self.device, self.config) if self.config.get('ADMM', 'l1', bool) else apply_prune(self.model, self.device, self.config)
+            print_prune(self.model)
+            self.__test(self.config, self.model, self.device, self.test_loader)
+            self.__retrain(self.config, self.model, mask, self.device, self.train_loader, self.test_loader, optimizer)
+            print(self.performance_model.flops_accumulated, self.performance_model.flops_accumulated_base, flush=True)
 
 
     def __train(self, config, model, device, train_loader, test_loader, optimizer):
@@ -49,7 +47,7 @@ class ADMMRetrain:
                 loss = regularized_nll_loss(config, model, output, target)
                 loss.backward()
                 optimizer.step()
-                self.performance_model.eval(model)
+                self.performance_model = PerformanceModel(model, train_loader)
             self.__test(config, model, device, test_loader)
 
         Z, U = initialize_Z_and_U(model)
@@ -63,12 +61,11 @@ class ADMMRetrain:
                 loss = admm_loss(config, device, model, Z, U, output, target)
                 loss.backward()
                 optimizer.step()
-                self.performance_model.eval(model)
+                self.performance_model = PerformanceModel(model, train_loader)
             X = update_X(model)
             Z = update_Z_l1(X, U, config) if config.get('ADMM', 'l1', bool) else update_Z(X, U, config)
             U = update_U(U, X, Z)
             print_convergence(model, X, Z)
-
             self.__test(config, model, device, test_loader)
 
 
@@ -102,6 +99,5 @@ class ADMMRetrain:
                 loss = F.nll_loss(output, target)
                 loss.backward()
                 optimizer.prune_step(mask)
-                self.performance_model.eval(model)
-
+                self.performance_model = PerformanceModel(model, train_loader)
             self.__test(config, model, device, test_loader)
