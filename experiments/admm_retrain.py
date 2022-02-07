@@ -29,17 +29,17 @@ class ADMMRetrain:
 
     def dispatch(self):
         torch.manual_seed(self.config.get('OTHER', 'seed', int))
-        optimizer = PruneAdam(self.model.named_parameters(), lr=self.config.get('ADMM', 'lr', float),
-                              eps=self.config.get('ADMM', 'adam_eps', float))
+        optimizer = PruneAdam(self.model.named_parameters(), lr=self.config.get('SPECIFICATION', 'lr', float),
+                              eps=self.config.get('SPECIFICATION', 'adam_eps', float))
         self.__train(self.config, self.model, self.device, self.train_loader, self.test_loader, optimizer)
-        mask = apply_l1_prune(self.model, self.device, self.config) if self.config.get('ADMM', 'l1', bool) else apply_prune(self.model, self.device, self.config)
+        mask = apply_l1_prune(self.model, self.device, self.config) if self.config.get('SPECIFICATION', 'l1', bool) else apply_prune(self.model, self.device, self.config)
         print_prune(self.model)
         self.__test(self.config, self.model, self.device, self.test_loader)
         self.__retrain(self.config, self.model, mask, self.device, self.train_loader, self.test_loader, optimizer)
 
 
     def __train(self, config, model, device, train_loader, test_loader, optimizer):
-        for epoch in range(config.get('ADMM', 'pre_epochs', int)):
+        for epoch in range(config.get('SPECIFICATION', 'pre_epochs', int)):
             print('Pre epoch: {}'.format(epoch + 1))
             model.train()
             for batch_idx, (data, target) in enumerate(tqdm(train_loader)):
@@ -53,7 +53,7 @@ class ADMMRetrain:
             self.__test(config, model, device, test_loader)
 
         Z, U = initialize_Z_and_U(model)
-        for epoch in range(config.get('ADMM', 'epochs', int)):
+        for epoch in range(config.get('SPECIFICATION', 'epochs', int)):
             model.train()
             print('Epoch: {}'.format(epoch + 1))
             for batch_idx, (data, target) in enumerate(tqdm(train_loader)):
@@ -65,7 +65,7 @@ class ADMMRetrain:
                 optimizer.step()
                 self.performance_model.eval(model)
             X = update_X(model)
-            Z = update_Z_l1(X, U, config) if config.get('ADMM', 'l1', bool) else update_Z(X, U, config)
+            Z = update_Z_l1(X, U, config) if config.get('SPECIFICATION', 'l1', bool) else update_Z(X, U, config)
             U = update_U(U, X, Z)
             print_convergence(model, X, Z)
 
@@ -92,7 +92,7 @@ class ADMMRetrain:
 
 
     def __retrain(self, config, model, mask, device, train_loader, test_loader, optimizer):
-        for epoch in range(config.get('ADMM', 'pre_epochs', int)):
+        for epoch in range(config.get('SPECIFICATION', 'pre_epochs', int)):
             print('Re epoch: {}'.format(epoch + 1))
             model.train()
             for batch_idx, (data, target) in enumerate(tqdm(train_loader)):

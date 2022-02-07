@@ -18,8 +18,13 @@ def main():
 
     #config.load('configs/gd_top_k_mc/lenet_mnist.ini')
 
+    #config.load('configs/gd_top_k_mc_ac/lenet_mnist.ini')
+
     #config.load('configs/gd_top_k_mc_ac_dk/lenet_mnist.ini')
-    config.load('configs/gd_top_k_mc_ac_dk/alexnet_cifar10.ini')
+    #config.load('configs/gd_top_k_mc_ac_dk/alexnet_cifar10.ini')
+
+    #config.load('configs/re_pruning/lenet_mnist.ini')
+    config.load('configs/re_pruning/alexnet_cifar10.ini')
 
     experiment_factory = ExperimentFactory()
     experiment = experiment_factory.get_experiment(config)

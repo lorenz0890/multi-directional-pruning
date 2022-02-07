@@ -1,6 +1,6 @@
 import torch
 
-from gd import GradientDiversity
+from pruning import GradientDiversity
 
 class GradientDiversityTopKGradients(GradientDiversity):
     def __init__(self, lb, k):

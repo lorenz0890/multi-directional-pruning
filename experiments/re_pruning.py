@@ -2,9 +2,10 @@ from __future__ import print_function
 import argparse
 import torch
 import torch.nn.functional as F
-from torch.optim import Adam
+from torch.optim import Adam, SGD
 
-from pruning import GradientDiversity, GradientDiversityTopKGradients, MonteCarloGDTopKGradients
+from pruning import GradientDiversity, GradientDiversityTopKGradients
+from pruning import RePruningConvDet
 from optimizer import PruneAdam
 from model import LeNet, AlexNet
 from performance_model import PerformanceModel
@@ -14,7 +15,7 @@ from utils import regularized_nll_loss, admm_loss, \
 from torchvision import datasets, transforms
 from tqdm import tqdm
 
-class MCGDTopK:
+class REPruning:
     def __init__(self, model, train_loader, test_loader, config):
         self.model = model
         self.train_loader = train_loader
@@ -24,12 +25,14 @@ class MCGDTopK:
         self.kwargs = {'num_workers': 1, 'pin_memory': True} if self.use_cuda else {}
         self.device = torch.device("cuda" if self.use_cuda else "cpu")
         self.performance_model = PerformanceModel(model, train_loader)
-        self.gradient_diversity = MonteCarloGDTopKGradients(config.get('SPECIFICATION', 'lb', int), config.get('SPECIFICATION', 'k', int),config.get('SPECIFICATION', 'se', int) , model)
+        self.gradient_diversity = GradientDiversityTopKGradients(config.get('SPECIFICATION', 'lb', int), config.get('SPECIFICATION', 'k', int)) #Only required for G Norm & Accum functionality
+        self.conv_pruning = RePruningConvDet(1e-1, 1e-2, 1e-2, self.config.get('SPECIFICATION', 'lr', float), 55, config.get('SPECIFICATION', 'lb', int))
 
     def dispatch(self):
         torch.manual_seed(self.config.get('OTHER', 'seed', int))
-        optimizer = Adam(self.model.parameters(), lr=self.config.get('SPECIFICATION', 'lr', float),
-                              eps=self.config.get('SPECIFICATION', 'adam_eps', float))
+        optimizer = SGD(self.model.parameters(), lr=self.config.get('SPECIFICATION', 'lr', float), weight_decay=1e-3)
+        #optimizer = Adam(self.model.parameters(), lr=self.config.get('SPECIFICATION', 'lr', float),
+        #                      eps=self.config.get('SPECIFICATION', 'adam_eps', float))
 
         self.__train(self.config, self.model, self.device, self.train_loader, self.test_loader, optimizer)
         self.__test(self.config, self.model, self.device, self.test_loader)
@@ -43,16 +46,36 @@ class MCGDTopK:
                 data, target = data.to(device), target.to(device)
                 optimizer.zero_grad()
                 output = model(data)
-                loss = F.nll_loss(output, target, reduction='sum')#regularized_nll_loss(config, model, output, target)
+                loss = F.nll_loss(output, target, reduction='sum') #regularized_nll_loss(config, model, output, target)
+                #l1_norm = sum(p.abs().sum() for p in model.parameters())
+                #loss += 1e-3 * l1_norm
+
                 loss.backward()
                 self.gradient_diversity.norm_grads(model)
-                self.gradient_diversity.update_epoch(epoch)
                 self.gradient_diversity.accum_grads(model)
+
+                self.conv_pruning.compute_mask(model, self.gradient_diversity.accum_g, batch_idx)
+                self.conv_pruning.apply_mask(model)
+                self.conv_pruning.apply_threshold(model)
+
                 self.gradient_diversity.update_gd(batch_idx)
-                self.gradient_diversity.select_delete_grads(batch_idx, epoch)
-                self.gradient_diversity.delete_selected_grads(model)
+                #self.gradient_diversity.select_delete_grads(batch_idx)
+                #self.gradient_diversity.delete_selected_grads(model)
+
                 optimizer.step()
+
                 self.performance_model.eval(model)
+
+                if batch_idx % config.get('SPECIFICATION', 'lb', int) == 0:
+                    print('Total SU', self.performance_model.flops_accumulated_base/self.performance_model.flops_accumulated,
+                          '\nCurrent SU', self.performance_model.flops_current_base/self.performance_model.flops_current,
+                          '\nTotal SU FWD',self.performance_model.flops_accumulated_base_fwd / self.performance_model.flops_accumulated_fwd,
+                          '\nCurrent SU FWD', self.performance_model.flops_current_base_fwd / self.performance_model.flops_current_fwd,
+                          '\nTotal SU BWD',self.performance_model.flops_accumulated_base_bwd / self.performance_model.flops_accumulated_bwd,
+                          '\nCurrent SU BWD',self.performance_model.flops_current_base_bwd / self.performance_model.flops_current_bwd,
+                          '\nCurrent Sparsity',self.performance_model.sparsity_current,
+                          flush=True)
+
             self.__test(config, model, device, test_loader)
 
 

@@ -1,7 +1,7 @@
 import torch
 from torch.distributions import Categorical
 
-from gd import GradientDiversity
+from pruning import GradientDiversity
 
 class MonteCarloGDTopKGradients(GradientDiversity):
     def __init__(self, lb, k, se, model):

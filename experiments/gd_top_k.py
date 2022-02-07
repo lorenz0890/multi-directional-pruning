@@ -4,7 +4,7 @@ import torch
 import torch.nn.functional as F
 from torch.optim import Adam
 
-from gd import GradientDiversity, GradientDiversityTopKGradients
+from pruning import GradientDiversity, GradientDiversityTopKGradients
 from optimizer import PruneAdam
 from model import LeNet, AlexNet
 from performance_model import PerformanceModel
@@ -24,19 +24,19 @@ class GDTopK:
         self.kwargs = {'num_workers': 1, 'pin_memory': True} if self.use_cuda else {}
         self.device = torch.device("cuda" if self.use_cuda else "cpu")
         self.performance_model = PerformanceModel(model, train_loader)
-        self.gradient_diversity = GradientDiversityTopKGradients(config.get('GDTOPK', 'lb', int), config.get('GDTOPK', 'k', int))
+        self.gradient_diversity = GradientDiversityTopKGradients(config.get('SPECIFICATION', 'lb', int), config.get('SPECIFICATION', 'k', int))
 
     def dispatch(self):
         torch.manual_seed(self.config.get('OTHER', 'seed', int))
-        optimizer = Adam(self.model.parameters(), lr=self.config.get('GDTOPK', 'lr', float),
-                              eps=self.config.get('GDTOPK', 'adam_eps', float))
+        optimizer = Adam(self.model.parameters(), lr=self.config.get('SPECIFICATION', 'lr', float),
+                              eps=self.config.get('SPECIFICATION', 'adam_eps', float))
 
         self.__train(self.config, self.model, self.device, self.train_loader, self.test_loader, optimizer)
         self.__test(self.config, self.model, self.device, self.test_loader)
         print(self.performance_model.flops_accumulated, self.performance_model.flops_accumulated_base, flush=True)
 
     def __train(self, config, model, device, train_loader, test_loader, optimizer):
-        for epoch in range(config.get('GDTOPK', 'epochs', int)):
+        for epoch in range(config.get('SPECIFICATION', 'epochs', int)):
             print('Epoch: {}'.format(epoch + 1))
             model.train()
             for batch_idx, (data, target) in enumerate(tqdm(train_loader)):

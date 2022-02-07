@@ -1,6 +1,7 @@
 import torch
+from abc import ABC
 
-class GradientDiversity:
+class GradientDiversity(ABC):
     def __init__(self, lb):
         self.lb = lb
         self.global_gd = 0.0
