@@ -15,7 +15,7 @@ from torchvision import datasets, transforms
 from tqdm import tqdm
 
 class GDTopK:
-    def __init__(self, model, train_loader, test_loader, config):
+    def __init__(self, model, train_loader, test_loader, config, logger):
         self.model = model
         self.train_loader = train_loader
         self.test_loader = test_loader

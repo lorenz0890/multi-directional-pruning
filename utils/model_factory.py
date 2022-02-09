@@ -2,7 +2,7 @@ import torchvision.models
 from torchvision import datasets, transforms
 import torch
 
-from model import LeNet, AlexNet
+from model import LeNet, AlexNet, VGG16, ResNet18
 
 
 class ModelFactory:
@@ -18,5 +18,9 @@ class ModelFactory:
         elif config.get('EXPERIMENT', 'model', str) == 'alexnet':
             model = AlexNet().to(device)
         elif config.get('EXPERIMENT', 'model', str) == 'vgg16':
-            model = torchvision.models.vgg16().to(device)
+            model = VGG16().to(device) #torchvision.models.vgg16().to(device) #TODO add bn VGG
+        elif config.get('EXPERIMENT', 'model', str) == 'vgg16b':
+            model = VGG16().to(device)#torchvision.models.vgg16_bn().to(device)
+        elif config.get('EXPERIMENT', 'model', str) == 'resnet18':
+            model = ResNet18().to(device)#torchvision.models.resnet18().to(device)
         return model

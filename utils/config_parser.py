@@ -9,6 +9,9 @@ class Parser:
         self.config.read(path)
         self.loaded = True
 
+    def get_raw(self):
+        return {s:dict(self.config.items(s)) for s in self.config.sections()}
+
     def get(self, section, key, dtype):
         if self.loaded:
             return dtype(self.config[section][key])

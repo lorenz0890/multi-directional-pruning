@@ -12,7 +12,7 @@ from torchvision import datasets, transforms
 from tqdm import tqdm
 
 class ADMMIntra:
-    def __init__(self, model, train_loader, test_loader, config):
+    def __init__(self, model, train_loader, test_loader, config, logger):
         self.model = model
         self.train_loader = train_loader
         self.test_loader = test_loader
@@ -24,7 +24,7 @@ class ADMMIntra:
 
     def dispatch(self):
         torch.manual_seed(self.config.get('OTHER', 'seed', int))
-        optimizer = PruneAdam(self.model.named_parameters(), lr=self.config.get('ADMM', 'lr', float),
+        optimizer = PruneAdam(self.model.named_parameters(), lr=self.config.get('SPECIFICATION', 'lr', float),
                               eps=self.config.get('SPECIFICATION', 'adam_eps', float))
 
         for i in range(self.config.get('SPECIFICATION', 'repeat', int)):
@@ -47,7 +47,7 @@ class ADMMIntra:
                 loss = regularized_nll_loss(config, model, output, target)
                 loss.backward()
                 optimizer.step()
-                self.performance_model = PerformanceModel(model, train_loader)
+                self.performance_model.eval(model, 1)
             self.__test(config, model, device, test_loader)
 
         Z, U = initialize_Z_and_U(model)
@@ -61,7 +61,7 @@ class ADMMIntra:
                 loss = admm_loss(config, device, model, Z, U, output, target)
                 loss.backward()
                 optimizer.step()
-                self.performance_model = PerformanceModel(model, train_loader)
+                self.performance_model.eval(model, 1)
             X = update_X(model)
             Z = update_Z_l1(X, U, config) if config.get('SPECIFICATION', 'l1', bool) else update_Z(X, U, config)
             U = update_U(U, X, Z)
@@ -99,5 +99,5 @@ class ADMMIntra:
                 loss = F.nll_loss(output, target)
                 loss.backward()
                 optimizer.prune_step(mask)
-                self.performance_model = PerformanceModel(model, train_loader)
+                self.performance_model.eval(model, 1)
             self.__test(config, model, device, test_loader)

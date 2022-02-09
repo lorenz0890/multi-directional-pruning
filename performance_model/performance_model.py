@@ -36,6 +36,8 @@ class PerformanceModel:
         self.flops_current_base_bwd = 1e-38  # 0.0
 
         self.sparsity_current = 0.0
+        self.c_sparsity_current = 0.0
+        self.l_sparsity_current = 0.0
 
     def eval(self, model, ac = 1):
         stats_batch = self.__current_flops(model, ac)
@@ -56,17 +58,32 @@ class PerformanceModel:
         self.flops_accumulated_bwd += stats_batch[5]
         self.flops_accumulated_base_bwd += stats_batch[6]
 
+        self.c_sparsity_current = stats_batch[7]
+        self.l_sparsity_current = stats_batch[8]
+
     def __current_flops(self, model, ac):
-        flops_i, flops_i_base, density_i = 0, 0, 0
+        flops_i, flops_i_base, density_i, c_density_i, l_density_i = 0, 0, 0, 0, 0
         flops_i_fwd, flops_i_base_fwd = 0, 0
         flops_i_bwd, flops_i_base_bwd = 0, 0
         ctr = 0
+        ctr_c = 0
+        ctr_l = 0
         for name, param in model.named_parameters():
             # https://openai.com/blog/ai-and-compute/
             prefix = name.split('.')[0]
             postfix = name.split('.')[1]
             if postfix != 'bias':
                 density = (torch.count_nonzero(param) / torch.numel(param)).numpy()
+                c_density = 0.0
+                l_density = 0.0
+                ctr += 1
+                if 'conv' in name or 'features' in name:
+                    c_density = density
+                    ctr_c+=1
+                if not ('conv' in name or 'features' in name):
+                    l_density = density
+                    ctr_l+=1
+
                 density_g = 1.0
                 if param.grad is not None:
                     density_g = (torch.count_nonzero(param.grad) / torch.numel(param.grad)).numpy()
@@ -80,6 +97,8 @@ class PerformanceModel:
                     flops_i += self.macs[prefix][0] * 2 * density
 
                 density_i += density
+                c_density_i += c_density
+                l_density_i += l_density
 
                 if param.grad is not None:
                     flops_i_n_fwd = self.macs[prefix][0] * 2 # fwd,bwd updaten
@@ -90,9 +109,9 @@ class PerformanceModel:
                 else:
                     flops_i_n_fwd = self.macs[prefix][0] * 2
                     flops_i_base += flops_i_n_fwd
-                ctr += 1
 
-        return flops_i * 1e-9, flops_i_base * 1e-9, 1 - density_i / ctr, flops_i_fwd, flops_i_base_fwd, flops_i_bwd, flops_i_base_bwd
+        return flops_i * 1e-9, flops_i_base * 1e-9, 1 - density_i / ctr, flops_i_fwd, \
+               flops_i_base_fwd, flops_i_bwd, flops_i_base_bwd, 1 - c_density_i / ctr_c, 1 - l_density_i / ctr_l
 
     def print_memstats(self, batch_idx, interval):
         if batch_idx % interval == 0:
