@@ -80,10 +80,9 @@ class PerformanceModel:
                 if 'conv' in name or 'features' in name:
                     c_density = density
                     ctr_c+=1
-                if not ('conv' in name or 'features' in name):
+                if 'fc' in name or 'classifier' in name:
                     l_density = density
                     ctr_l+=1
-
                 density_g = 1.0
                 if param.grad is not None:
                     density_g = (torch.count_nonzero(param.grad) / torch.numel(param.grad)).numpy()

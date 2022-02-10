@@ -19,7 +19,7 @@ class RePruningLinearDet(RePruning):
 
     def compute_mask(self, model, acm_g, batch_idx):
         if batch_idx % self.lb == 0:
-
+            #self.metrics = {}
             sz = 5  # Idea can we use this for cutting out lines?
             for attempt in range(self.attempts):
                 d_min, g_min, n_min, k_min, j_min, sz_k_min, sz_j_min = float('inf'), None, 0, 0, 0, sz, sz
@@ -29,14 +29,10 @@ class RePruningLinearDet(RePruning):
                             W = p
                             G = acm_g[n]
                             W0 = W - self.lr * G
-                            #u = min(p.shape[0], p.shape[1])
-                            #l = int(u * self.scale) + 1  # max(p.shape[0],  p.shape[1])
-                            #sz = np.random.randint(l, u+1)
                             sz_k = np.random.randint(int(p.shape[0] * self.scale) + 1, p.shape[0] + 1)
                             sz_j = np.random.randint(int(p.shape[1] * self.scale) + 1, p.shape[1] + 1)
                             for k in range(0, p.shape[0] - sz_k, sz_k):
                                 for j in range(0, p.shape[1] - sz_j, sz_j):
-                                    # print('2', flush=True)
                                     if not "{}{}{}{}{}".format(n, k, j, sz_k, sz_j) in self.metrics:
                                         metric = torch.norm(W[k:k + sz_k, j:j + sz_j]) / torch.norm(W0[k:k + sz_k, j:j + sz_j])
                                         self.metrics["{}{}{}{}{}".format(n, k, j, sz_k, sz_j)] = torch.abs(1 - metric)
@@ -49,7 +45,6 @@ class RePruningLinearDet(RePruning):
                                         #sz_min = sz
                                         sz_k_min = sz_k
                                         sz_j_min = sz_j
-
                 if g_min is not None:
                     self.metrics["{}{}{}{}{}".format(n_min, k_min, j_min, sz_k_min, sz_j_min)] = float('inf')
                     for i, (n, p) in enumerate(model.named_parameters()):
@@ -65,15 +60,17 @@ class RePruningLinearDet(RePruning):
 
     def apply_mask(self, model):
         for i, (n, p) in enumerate(model.named_parameters()):
-            if n in self.masks:
-                p.data = p.data * (self.masks[n] + (torch.ones_like(p.data) - self.masks[n]) * self.strength)
-                if p.data.grad is not None:
-                    p.data.grad = p.data.grad * (self.masks[n] + (torch.ones_like(p.data) - self.masks[n]) * self.strength)
+            if p.grad is not None and not 'bias' in n and ('fc' in n or 'classifier' in n):
+                if n in self.masks:
+                    p.data = p.data * (self.masks[n] + (torch.ones_like(p.data) - self.masks[n]) * self.strength)
+                    if p.data.grad is not None:
+                        p.data.grad = p.data.grad * (self.masks[n] + (torch.ones_like(p.data) - self.masks[n]) * self.strength)
 
     def apply_threshold(self, model):
         for i, (n, p) in enumerate(model.named_parameters()):
-            p.data = torch.where(torch.abs(p.data) > self.magnitude_threshold, p.data, torch.zeros_like(p.data))
-            if p.data.grad is not None:
-                p.data.grad = torch.where(torch.abs(p.data.grad) > self.magnitude_threshold, p.data,
-                                          torch.zeros_like(p.data.grad))
+            if p.grad is not None and not 'bias' in n and ('fc' in n or 'classifier' in n):
+                p.data = torch.where(torch.abs(p.data) > self.magnitude_threshold, p.data, torch.zeros_like(p.data))
+                if p.data.grad is not None:
+                    p.data.grad = torch.where(torch.abs(p.data.grad) > self.magnitude_threshold, p.data,
+                                              torch.zeros_like(p.data.grad))
 

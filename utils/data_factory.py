@@ -9,6 +9,8 @@ class DataFactory:
         train_loader = torch.utils.data.DataLoader(
             datasets.MNIST('data', train=True, download=True,
                            transform=transforms.Compose([
+                               #transforms.RandomHorizontalFlip(),
+                               #transforms.RandomVerticalFlip(),
                                transforms.ToTensor(),
                                transforms.Normalize((0.1307,), (0.3081,))
                            ])),

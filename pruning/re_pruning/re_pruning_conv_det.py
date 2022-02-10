@@ -36,7 +36,6 @@ class RePruningConvDet(RePruning):
                                     if not "{}{}{}{}{}".format(n, k, j, sz_k, sz_j) in self.metrics:
                                         metric = torch.norm(W[k:k+sz_k, j+sz_j, :, :]) / torch.norm(W0[k+sz_k, j+sz_j, :, :])
                                         self.metrics["{}{}{}{}{}".format(n, k, j, sz_k, sz_j)] = torch.abs(1 - metric)
-                                        print(metric, flush=True)
                                     if self.metrics["{}{}{}{}{}".format(n, k, j, sz_k, sz_j)] < d_min and self.metrics["{}{}{}{}{}".format(n, k, j, sz_k, sz_j)] <= self.metric_threshold:
                                         d_min = self.metrics["{}{}{}{}{}".format(n, k, j, sz_k, sz_j)]
                                         g_min = p.grad
@@ -62,15 +61,17 @@ class RePruningConvDet(RePruning):
 
     def apply_mask(self, model):
         for i, (n, p) in enumerate(model.named_parameters()):
-            if n in self.masks:
-                p.data = p.data * (self.masks[n] + (torch.ones_like(p.data) - self.masks[n]) * self.strength)
-                if p.data.grad is not None:
-                    p.data.grad = p.data.grad * (self.masks[n] + (torch.ones_like(p.data) - self.masks[n]) * self.strength)
+            if p.grad is not None and not 'bias' in n and ('conv' in n or 'features' in n):
+                if n in self.masks:
+                    p.data = p.data * (self.masks[n] + (torch.ones_like(p.data) - self.masks[n]) * self.strength)
+                    if p.data.grad is not None:
+                        p.data.grad = p.data.grad * (self.masks[n] + (torch.ones_like(p.data) - self.masks[n]) * self.strength)
 
     def apply_threshold(self, model):
         for i, (n, p) in enumerate(model.named_parameters()):
-            p.data = torch.where(torch.abs(p.data) > self.magnitude_threshold, p.data, torch.zeros_like(p.data))
-            if p.data.grad is not None:
-                p.data.grad = torch.where(torch.abs(p.data.grad) > self.magnitude_threshold, p.data,
-                                          torch.zeros_like(p.data.grad))
+            if p.grad is not None and not 'bias' in n and ('conv' in n or 'features' in n):
+                p.data = torch.where(torch.abs(p.data) > self.magnitude_threshold, p.data, torch.zeros_like(p.data))
+                if p.data.grad is not None:
+                    p.data.grad = torch.where(torch.abs(p.data.grad) > self.magnitude_threshold, p.data,
+                                              torch.zeros_like(p.data.grad))
 

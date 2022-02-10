@@ -59,6 +59,7 @@ class REPruning:
         print(self.performance_model.flops_accumulated, self.performance_model.flops_accumulated_base, flush=True)
 
     def __train(self, config, model, device, train_loader, test_loader, optimizer):#, scheduler):
+        scaler = torch.cuda.amp.GradScaler()
         for epoch in range(config.get('SPECIFICATION', 'epochs', int)):
             print('Epoch: {}'.format(epoch + 1))
             model.train()
@@ -66,7 +67,8 @@ class REPruning:
                 data, target = data.to(device), target.to(device)
                 optimizer.zero_grad()
                 output = model(data)
-                loss = F.nll_loss(output, target, reduction='sum') #regularized_nll_loss(config, model, output, target)
+                with torch.cuda.amp.autocast():
+                    loss = F.nll_loss(output, target, reduction='sum') #regularized_nll_loss(config, model, output, target)
                 '''
                 if epoch > 1:
                     l1_norm = sum(p.abs().sum() for p in model.parameters())
@@ -74,27 +76,33 @@ class REPruning:
                 '''
                 loss.backward()
                 self.gradient_diversity.norm_grads(model)
+                self.gradient_diversity.accum_grads(model)
 
                 if epoch <= self.config.get('SPECIFICATION', 'prune_epochs', int):
-                    self.gradient_diversity.accum_grads(model)
+                    
                     self.conv_pruning.compute_mask(model, self.gradient_diversity.accum_g, batch_idx)
                     self.linear_pruning.compute_mask(model, self.gradient_diversity.accum_g, batch_idx)
+                #if epoch > (self.config.get('SPECIFICATION', 'prune_epochs', int)):
                     self.conv_pruning.apply_mask(model)
                     self.conv_pruning.apply_threshold(model)
                     self.linear_pruning.apply_mask(model)
                     self.linear_pruning.apply_threshold(model)
-                    self.gradient_diversity.update_gd(batch_idx)
+
+                self.gradient_diversity.update_gd(batch_idx)
 
                 
-                #if epoch >= 2:
-                #    self.gradient_diversity.select_delete_grads(batch_idx)
-                #    self.gradient_diversity.delete_selected_grads(model)
+                #if epoch > self.config.get('SPECIFICATION', 'prune_epochs', int):
+                #self.gradient_diversity.select_delete_grads(batch_idx)
+                #self.gradient_diversity.delete_selected_grads(model)
 
                 #if batch_idx % 4 == 0:
-
                 optimizer.step()
 
-                self.performance_model.eval(model, 1)
+                #for p in model.parameters():
+                #    p.grad.data = p.grad.data.half().float()
+                #    p.data = p.data.half().float()
+
+                self.performance_model.eval(model, 4)
 
                 if batch_idx % (config.get('SPECIFICATION', 'lb', int)) == 0:
                     print('Total SU', self.performance_model.flops_accumulated_base/self.performance_model.flops_accumulated,
