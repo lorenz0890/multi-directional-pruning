@@ -1,10 +1,16 @@
 import gc
 
+import numpy as np
 import torch
 from thop import profile
 
 class PerformanceModel:
-    def __init__(self, model, train_loader):
+    def __init__(self, model, train_loader,
+                 overhead_gd_top_k=False, overhead_gd_top_k_mc=False, overhead_re_pruning=False):
+
+        self.est_oh_gd_top_k = overhead_gd_top_k
+        self.est_oh_gd_top_k_mc = overhead_gd_top_k_mc
+        self.est_oh_re_pruning = overhead_re_pruning
 
         in_shape = next(enumerate(train_loader))[1][0].shape
         self.macs = profile(model,
@@ -38,6 +44,62 @@ class PerformanceModel:
         self.sparsity_current = 0.0
         self.c_sparsity_current = 0.0
         self.l_sparsity_current = 0.0
+
+
+    def __estimate_overhead_re_pruning(self, model):
+        # https://coek.info/pdf-algorithms-54ed9513cfa623e30da35434ea7edcc833265.html
+        # https://mast.queensu.ca/~andrew/notes/pdf/2010a.pdf
+        oh_search_space_iteration = 0 #TODO ensure that if multiple methods combined, accum is only accounted for once
+        for name, param in model.named_parameters():
+            prefix = name.split('.')[0]
+            postfix = name.split('.')[1]
+            if postfix != 'bias':
+                density = (torch.count_nonzero(param) / torch.numel(param)).numpy()
+                # RE Pruning
+                if 'conv' in name or 'features' in name or 'fc' in name or 'classifier' in name:
+                    oh_w0 = 2 * torch.count_nonzero(param) / 200  # Obtaining W0 from accumulated grads very lb batches
+                    oh_metric = 2 * (density * (np.prod(list(param.shape)))) / 200  # 2 times Frobenius Norm every lb batches
+                    oh_search_space_iteration += oh_w0 + oh_metric * 2 * 0.25  # metric times attempts times scale
+        return oh_search_space_iteration
+
+    def __estimate_overhead_gd_top_k(self, model):
+        # https://coek.info/pdf-algorithms-54ed9513cfa623e30da35434ea7edcc833265.html
+        # https://mast.queensu.ca/~andrew/notes/pdf/2010a.pdf
+        oh_search_space_iteration = 0, 0
+        for name, param in model.named_parameters():
+            prefix = name.split('.')[0]
+            postfix = name.split('.')[1]
+            if postfix != 'bias':
+                density = (torch.count_nonzero(param) / torch.numel(param)).numpy()
+                if 'conv' in name or 'features' in name or 'fc' in name or 'classifier' in name:
+                    oh_metric = (density * (np.prod(list(param.shape)))) / 200  # 1 times Frobenius Norm every lb batches
+                    oh_search_space_iteration += oh_metric
+        return oh_search_space_iteration
+
+    def __estimate_overhead_grad_accumulation(self, model):
+        oh_grad_accumulation = 0  # TODO ensure that if multiple methods combined, accum is only accounted for once
+        for name, param in model.named_parameters():
+            prefix = name.split('.')[0]
+            postfix = name.split('.')[1]
+            if postfix != 'bias':
+                if 'conv' in name or 'features' in name or 'fc' in name or 'classifier' in name:
+                    oh_grad_accumulation += torch.count_nonzero(param)  # accumulation of gradients every batch
+        return oh_grad_accumulation
+
+    def __estimate_overhead(self, model):
+        #Assumptions: regularized baseline with gradient normalzation
+        oh_grad_accumulation, oh_re_pruning, oh_gd_top_k, oh_gd_top_k_mc = 0, 0, 0, 0
+        if self.est_oh_re_pruning or self.est_oh_gd_top_k or self.est_oh_gd_top_k_mc:
+            oh_grad_accumulation = self.__estimate_overhead_grad_accumulation(model)
+        if self.est_oh_gd_top_k:
+            oh_gd_top_k = self.__estimate_overhead_gd_top_k(model)
+        if self.est_oh_re_pruning:
+            oh_re_pruning = self.__estimate_overhead_re_pruning(model)
+        if self.est_oh_gd_top_k_mc:
+            oh_gd_top_k_mc = self.__estimate_overhead_gd_top_k(model)
+        return oh_gd_top_k_mc + oh_gd_top_k + oh_re_pruning + oh_grad_accumulation
+
+
 
     def eval(self, model, ac = 1):
         stats_batch = self.__current_flops(model, ac)

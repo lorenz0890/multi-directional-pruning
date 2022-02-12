@@ -19,7 +19,7 @@ class RePruningLinearDet(RePruning):
 
     def compute_mask(self, model, acm_g, batch_idx):
         if batch_idx % self.lb == 0:
-            #self.metrics = {}
+            self.metrics = {}
             sz = 5  # Idea can we use this for cutting out lines?
             for attempt in range(self.attempts):
                 d_min, g_min, n_min, k_min, j_min, sz_k_min, sz_j_min = float('inf'), None, 0, 0, 0, sz, sz
@@ -54,9 +54,13 @@ class RePruningLinearDet(RePruning):
                                 mask = torch.ones_like(p.data)
                                 mask[k_min:k_min + sz_k_min, j_min:j_min + sz_j_min] = mask[k_min:k_min + sz_k_min, j_min:j_min + sz_j_min] * 0.0
                                 if n in self.masks:
-                                    self.masks[n] = self.masks[n] * mask
+                                    self.masks[n] = self.masks[n] * mask * torch.where(
+                                        torch.abs(p.data) > self.magnitude_threshold, torch.ones_like(p.data),
+                                        torch.zeros_like(p.data))
                                 else:
-                                    self.masks[n] = mask
+                                    self.masks[n] = mask * torch.where(torch.abs(p.data) > self.magnitude_threshold,
+                                                                       torch.ones_like(p.data),
+                                                                       torch.zeros_like(p.data))
 
     def apply_mask(self, model):
         for i, (n, p) in enumerate(model.named_parameters()):
