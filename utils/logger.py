@@ -14,7 +14,7 @@ class Logger:
 
     def log(self, key, value):
         if self.active:
-            if key not in self.logdict:
+            if key not in self.logdict['LOGDATA']:
                 self.logdict['LOGDATA'][key] = []
             self.logdict['LOGDATA'][key].append(value)
 

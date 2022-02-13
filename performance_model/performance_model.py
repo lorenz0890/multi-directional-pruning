@@ -5,9 +5,10 @@ import torch
 from thop import profile
 
 class PerformanceModel:
-    def __init__(self, model, train_loader,
-                 overhead_gd_top_k=False, overhead_gd_top_k_mc=False, overhead_re_pruning=False):
+    def __init__(self, model, train_loader, config, overhead_gd_top_k=False,
+                 overhead_gd_top_k_mc=False, overhead_re_pruning=False, ):
 
+        self.config = config
         self.est_oh_gd_top_k = overhead_gd_top_k
         self.est_oh_gd_top_k_mc = overhead_gd_top_k_mc
         self.est_oh_re_pruning = overhead_re_pruning
@@ -56,10 +57,14 @@ class PerformanceModel:
             if postfix != 'bias':
                 density = (torch.count_nonzero(param) / torch.numel(param)).numpy()
                 # RE Pruning
-                if 'conv' in name or 'features' in name or 'fc' in name or 'classifier' in name:
-                    oh_w0 = 2 * torch.count_nonzero(param) / 200  # Obtaining W0 from accumulated grads very lb batches
-                    oh_metric = 2 * (density * (np.prod(list(param.shape)))) / 200  # 2 times Frobenius Norm every lb batches
-                    oh_search_space_iteration += oh_w0 + oh_metric * 2 * 0.25  # metric times attempts times scale
+                if 'conv' in name or 'features' in name:
+                    oh_w0 = 2 * torch.count_nonzero(param) / self.config.get('SPECIFICATION', 'lb', int)  # Obtaining W0 from accumulated grads very lb batches
+                    oh_metric = 2 * (density * (np.prod(list(param.shape)))) / self.config.get('SPECIFICATION', 'lb', int)  # 2 times Frobenius Norm every lb batches
+                    oh_search_space_iteration += oh_w0 + oh_metric * self.config.get('SPECIFICATION', 'sample_c', int) * self.config.get('SPECIFICATION', 'scale_c', float)  # metric times attempts times scale
+                if 'fc' in name or 'classifier' in name:
+                    oh_w0 = 2 * torch.count_nonzero(param) / self.config.get('SPECIFICATION', 'lb',int)
+                    oh_metric = 2 * (density * (np.prod(list(param.shape)))) / self.config.get('SPECIFICATION', 'lb',int)
+                    oh_search_space_iteration += oh_w0 + oh_metric * self.config.get('SPECIFICATION', 'sample_l', int) * self.config.get('SPECIFICATION', 'scale_l', float)
         return oh_search_space_iteration
 
     def __estimate_overhead_gd_top_k(self, model):
@@ -72,7 +77,7 @@ class PerformanceModel:
             if postfix != 'bias':
                 density = (torch.count_nonzero(param) / torch.numel(param)).numpy()
                 if 'conv' in name or 'features' in name or 'fc' in name or 'classifier' in name:
-                    oh_metric = (density * (np.prod(list(param.shape)))) / 200  # 1 times Frobenius Norm every lb batches
+                    oh_metric = (density * (np.prod(list(param.shape)))) / self.config.get('SPECIFICATION', 'lb', int)  # 1 times Frobenius Norm every lb batches
                     oh_search_space_iteration += oh_metric
         return oh_search_space_iteration
 
@@ -97,7 +102,7 @@ class PerformanceModel:
             oh_re_pruning = self.__estimate_overhead_re_pruning(model)
         if self.est_oh_gd_top_k_mc:
             oh_gd_top_k_mc = self.__estimate_overhead_gd_top_k(model)
-        return oh_gd_top_k_mc + oh_gd_top_k + oh_re_pruning + oh_grad_accumulation
+        return (oh_gd_top_k_mc + oh_gd_top_k + oh_re_pruning + oh_grad_accumulation).item()* 1e-9 #GFLOPs
 
 
 
@@ -122,6 +127,7 @@ class PerformanceModel:
 
         self.c_sparsity_current = stats_batch[7]
         self.l_sparsity_current = stats_batch[8]
+        self.oh = self.__estimate_overhead(model)
 
     def __current_flops(self, model, ac):
         flops_i, flops_i_base, density_i, c_density_i, l_density_i = 0, 0, 0, 0, 0
@@ -140,6 +146,7 @@ class PerformanceModel:
                 l_density = 0.0
                 ctr += 1
                 if 'conv' in name or 'features' in name:
+                    #print(name, density)
                     c_density = density
                     ctr_c+=1
                 if 'fc' in name or 'classifier' in name:

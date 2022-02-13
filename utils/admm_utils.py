@@ -51,7 +51,7 @@ def update_Z(X, U, config):
     idx = 0
     for x, u in zip(X, U):
         z = x + u
-        pcen = np.percentile(abs(z), 100 *  config.get('SPECIFICATION', 'alpha', lambda a : [float(b) for b in str(a).split(',')])[idx])
+        pcen = np.percentile(abs(z), 100 *  config.get('SPECIFICATION', 'percent', lambda a : [float(b) for b in str(a).split(',')])[idx])
         under_threshold = abs(z) < pcen
         z.data[under_threshold] = 0
         new_Z += (z,)
@@ -108,7 +108,7 @@ def apply_prune(model, device, config):
     idx = 0
     for name, param in model.named_parameters():
         if name.split('.')[-1] == "weight":
-            mask = prune_weight(param, device, config.get('SPECIFICATION', 'alpha', lambda a : [float(b) for b in str(a).split(',')])[idx])
+            mask = prune_weight(param, device, config.get('SPECIFICATION', 'percent', lambda a : [float(b) for b in str(a).split(',')])[idx])
             param.data.mul_(mask)
             # param.data = torch.Tensor(weight_pruned).to(device)
             dict_mask[name] = mask

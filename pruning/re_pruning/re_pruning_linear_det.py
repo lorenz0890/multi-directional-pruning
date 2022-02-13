@@ -5,76 +5,79 @@ from pruning import RePruning
 
 
 class RePruningLinearDet(RePruning):
-    def __init__(self, softness, magnitude_threshold, metric_threshold, lr, attempts, lb, scale):
+    def __init__(self, softness, magnitude_threshold, metric_threshold, lr, sample, lb, scale, prune):
         super().__init__()
         self.masks = {}
         self.strength = softness
         self.magnitude_threshold = magnitude_threshold
         self.metric_threshold = metric_threshold
-        self.attempts = attempts
+        self.sample = sample
+        self.prune = prune
         self.lr = lr
         self.lb = lb
         self.scale = scale
         self.metrics = {}
 
     def compute_mask(self, model, acm_g, batch_idx):
-        if batch_idx % self.lb == 0:
-            self.metrics = {}
-            sz = 5  # Idea can we use this for cutting out lines?
-            for attempt in range(self.attempts):
-                d_min, g_min, n_min, k_min, j_min, sz_k_min, sz_j_min = float('inf'), None, 0, 0, 0, sz, sz
-                for i, (n, p) in enumerate(model.named_parameters()):
-                    if p.grad is not None and not 'bias' in n and ('fc' in n  or 'classifier' in n): #'conv' in n and not 'features' in n:
-                        if len(p.shape) == 2:
-                            W = p
-                            G = acm_g[n]
-                            W0 = W - self.lr * G
-                            sz_k = np.random.randint(int(p.shape[0] * self.scale) + 1, p.shape[0] + 1)
-                            sz_j = np.random.randint(int(p.shape[1] * self.scale) + 1, p.shape[1] + 1)
-                            for k in range(0, p.shape[0] - sz_k, sz_k):
-                                for j in range(0, p.shape[1] - sz_j, sz_j):
-                                    if not "{}{}{}{}{}".format(n, k, j, sz_k, sz_j) in self.metrics:
-                                        metric = torch.norm(W[k:k + sz_k, j:j + sz_j]) / torch.norm(W0[k:k + sz_k, j:j + sz_j])
-                                        self.metrics["{}{}{}{}{}".format(n, k, j, sz_k, sz_j)] = torch.abs(1 - metric)
-                                    if self.metrics["{}{}{}{}{}".format(n, k, j, sz_k, sz_j)] < d_min and self.metrics["{}{}{}{}{}".format(n, k, j, sz_k, sz_j)] <= self.metric_threshold:
-                                        d_min = self.metrics["{}{}{}{}{}".format(n, k, j, sz_k, sz_j)]
-                                        g_min = p.grad
-                                        n_min = n
-                                        k_min = k
-                                        j_min = j
-                                        #sz_min = sz
-                                        sz_k_min = sz_k
-                                        sz_j_min = sz_j
-                if g_min is not None:
-                    self.metrics["{}{}{}{}{}".format(n_min, k_min, j_min, sz_k_min, sz_j_min)] = float('inf')
+        with torch.no_grad():
+            if batch_idx % self.lb == 0:
+                self.metrics = {}
+                for sample in range(self.sample):
                     for i, (n, p) in enumerate(model.named_parameters()):
-                        if p.grad is not None and n == n_min:
+                        if p.grad is not None and not 'bias' in n and ('fc' in n  or 'classifier' in n):
                             if len(p.shape) == 2:
-                                # print(n, attempt, k_min, j_min)
-                                mask = torch.ones_like(p.data)
-                                mask[k_min:k_min + sz_k_min, j_min:j_min + sz_j_min] = mask[k_min:k_min + sz_k_min, j_min:j_min + sz_j_min] * 0.0
-                                if n in self.masks:
-                                    self.masks[n] = self.masks[n] * mask * torch.where(
-                                        torch.abs(p.data) > self.magnitude_threshold, torch.ones_like(p.data),
-                                        torch.zeros_like(p.data))
-                                else:
-                                    self.masks[n] = mask * torch.where(torch.abs(p.data) > self.magnitude_threshold,
-                                                                       torch.ones_like(p.data),
-                                                                       torch.zeros_like(p.data))
+                                W = p
+                                G = acm_g[n]
+                                W0 = W - self.lr * G
+                                sz_k = np.random.randint(int(p.shape[0] * self.scale) + 1, p.shape[0] + 1)
+                                sz_j = np.random.randint(int(p.shape[1] * self.scale) + 1, p.shape[1] + 1)
+                                for k in range(0, p.shape[0] - sz_k, sz_k):
+                                    for j in range(0, p.shape[1] - sz_j, sz_j):
+                                        if not "{}:{}:{}:{}:{}".format(n, k, j, sz_k, sz_j) in self.metrics:
+                                            norm_w = torch.norm(W[k:k + sz_k, j + sz_j])
+                                            if norm_w != 0:
+                                                norm_w0 = torch.norm(W0[k:k + sz_k, j:j + sz_j])
+                                                metric = norm_w / norm_w0
+                                                self.metrics["{}:{}:{}:{}:{}".format(n, k, j, sz_k, sz_j)] = torch.abs(1 - metric)
+                                            else:
+                                                self.metrics["{}:{}:{}:{}:{}".format(n, k, j, sz_k, sz_j)] = float('inf')
+
+                for a in range(0, self.prune):
+                    if len(self.metrics) > 0:
+                        best_key = min(self.metrics, key=self.metrics.get)
+                        if self.metrics[best_key] == float("inf") or self.metrics[best_key] > self.metric_threshold:
+                            break
+                        else:
+                            del self.metrics[best_key]
+                        idx = best_key.split(':')
+                        mask = torch.ones_like(model.state_dict()[idx[0]].data)
+                        mask[int(idx[1]):int(idx[1]) + int(idx[3])][int(idx[2]):int(idx[2]) + int(idx[4])] = mask[int(idx[1]):int(idx[1]) + int(idx[3])][int(idx[2]):int(idx[2]) + int(idx[4])] * 0.0
+                        if idx[0] in self.masks:
+                            self.masks[idx[0]] = self.masks[idx[0]] * mask * torch.where(
+                                torch.abs(model.state_dict()[idx[0]].data) > self.magnitude_threshold,
+                                torch.ones_like(model.state_dict()[idx[0]].data),
+                                torch.zeros_like(model.state_dict()[idx[0]].data))
+                        else:
+                            self.masks[idx[0]] = mask * torch.where(
+                                torch.abs(model.state_dict()[idx[0]].data) > self.magnitude_threshold,
+                                torch.ones_like(model.state_dict()[idx[0]].data),
+                                torch.zeros_like(model.state_dict()[idx[0]].data))
 
     def apply_mask(self, model):
-        for i, (n, p) in enumerate(model.named_parameters()):
-            if p.grad is not None and not 'bias' in n and ('fc' in n or 'classifier' in n):
-                if n in self.masks:
-                    p.data = p.data * (self.masks[n] + (torch.ones_like(p.data) - self.masks[n]) * self.strength)
-                    if p.data.grad is not None:
-                        p.data.grad = p.data.grad * (self.masks[n] + (torch.ones_like(p.data) - self.masks[n]) * self.strength)
+        with torch.no_grad():
+            for i, (n, p) in enumerate(model.named_parameters()):
+                if p.grad is not None and not 'bias' in n and ('fc' in n or 'classifier' in n):
+                    if n in self.masks:
+                        p.data = p.data * (self.masks[n] + (torch.ones_like(p.data) - self.masks[n]) * self.strength)
+                        if p.data.grad is not None:
+                            p.data.grad = p.data.grad * self.masks[n]#(self.masks[n] + (torch.ones_like(p.data) - self.masks[n]) * self.strength)
 
     def apply_threshold(self, model):
-        for i, (n, p) in enumerate(model.named_parameters()):
-            if p.grad is not None and not 'bias' in n and ('fc' in n or 'classifier' in n):
-                p.data = torch.where(torch.abs(p.data) > self.magnitude_threshold, p.data, torch.zeros_like(p.data))
-                if p.data.grad is not None:
-                    p.data.grad = torch.where(torch.abs(p.data.grad) > self.magnitude_threshold, p.data,
-                                              torch.zeros_like(p.data.grad))
+        with torch.no_grad():
+            for i, (n, p) in enumerate(model.named_parameters()):
+                if p.grad is not None and not 'bias' in n and ('fc' in n or 'classifier' in n):
+                    p.data = torch.where(torch.abs(p.data) > self.magnitude_threshold, p.data, torch.zeros_like(p.data))
+                    if p.data.grad is not None:
+                        p.data.grad = torch.where(torch.abs(p.data.grad) > self.magnitude_threshold, p.data,
+                                                  torch.zeros_like(p.data.grad))
 
