@@ -73,7 +73,7 @@ class DataFactory:
         elif config.get('EXPERIMENT', 'dataset', str) == 'cifar10':
             train_loader, test_loader = self.__get_cifar10(config, kwargs)
         elif config.get('EXPERIMENT', 'dataset', str) == 'cifar100':
-            train_loader, test_loader = self.__get_cifar10(config, kwargs)
+            train_loader, test_loader = self.__get_cifar100(config, kwargs)
         elif config.get('EXPERIMENT', 'dataset', str) == 'tinyimagenet':
             train_loader, test_loader = self.__get_tiny_imagenet(config, kwargs)
         return train_loader, test_loader

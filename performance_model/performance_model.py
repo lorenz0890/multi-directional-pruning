@@ -47,7 +47,7 @@ class PerformanceModel:
         self.l_sparsity_current = 0.0
 
 
-    def __estimate_overhead_re_pruning(self, model):
+    def __estimate_overhead_re_pruning_search(self, model):
         # https://coek.info/pdf-algorithms-54ed9513cfa623e30da35434ea7edcc833265.html
         # https://mast.queensu.ca/~andrew/notes/pdf/2010a.pdf
         oh_search_space_iteration = 0 #TODO ensure that if multiple methods combined, accum is only accounted for once
@@ -66,6 +66,28 @@ class PerformanceModel:
                     oh_metric = 2 * (density * (np.prod(list(param.shape)))) / self.config.get('SPECIFICATION', 'lb',int)
                     oh_search_space_iteration += oh_w0 + oh_metric * self.config.get('SPECIFICATION', 'sample_l', int) * self.config.get('SPECIFICATION', 'scale_l', float)
         return oh_search_space_iteration
+
+    def __estimate_overhead_mask_computation(self, model):
+        oh_mask_computation = 0  # TODO ensure that if multiple methods combined, accum is only accounted for once
+        for name, param in model.named_parameters():
+            prefix = name.split('.')[0]
+            postfix = name.split('.')[1]
+            if postfix != 'bias':
+                if 'conv' in name or 'features' in name:
+                    oh_mask_computation += self.config.get('SPECIFICATION', 'prune_c', int) * torch.numel(param) / self.config.get('SPECIFICATION', 'lb',int)# TODO this can still be optimized
+                if 'fc' in name or 'classifier' in name:
+                    oh_mask_computation += self.config.get('SPECIFICATION', 'prune_l', int) * torch.numel(param) / self.config.get('SPECIFICATION', 'lb',int)# TODO this can still be optimized
+        return oh_mask_computation
+
+    def __estimate_overhead_mask_application(self, model):
+        oh_mask_application = 0  # TODO ensure that if multiple methods combined, accum is only accounted for once
+        for name, param in model.named_parameters():
+            prefix = name.split('.')[0]
+            postfix = name.split('.')[1]
+            if postfix != 'bias':
+                if 'conv' in name or 'features' in name or 'fc' in name or 'classifier' in name:
+                    oh_mask_application += torch.numel(param) * 2 # times two if grads masked TODO this can still be optimized
+        return oh_mask_application
 
     def __estimate_overhead_gd_top_k(self, model):
         # https://coek.info/pdf-algorithms-54ed9513cfa623e30da35434ea7edcc833265.html
@@ -99,7 +121,9 @@ class PerformanceModel:
         if self.est_oh_gd_top_k:
             oh_gd_top_k = self.__estimate_overhead_gd_top_k(model)
         if self.est_oh_re_pruning:
-            oh_re_pruning = self.__estimate_overhead_re_pruning(model)
+            oh_re_pruning = self.__estimate_overhead_re_pruning_search(model)
+            oh_re_pruning += self.__estimate_overhead_mask_computation(model)
+            oh_re_pruning += self.__estimate_overhead_mask_application(model)
         if self.est_oh_gd_top_k_mc:
             oh_gd_top_k_mc = self.__estimate_overhead_gd_top_k(model)
         return (oh_gd_top_k_mc + oh_gd_top_k + oh_re_pruning + oh_grad_accumulation).item()* 1e-9 #GFLOPs
@@ -127,15 +151,17 @@ class PerformanceModel:
 
         self.c_sparsity_current = stats_batch[7]
         self.l_sparsity_current = stats_batch[8]
+        self.g_sparsity_current = stats_batch[9]
         self.oh = self.__estimate_overhead(model)
 
     def __current_flops(self, model, ac):
-        flops_i, flops_i_base, density_i, c_density_i, l_density_i = 0, 0, 0, 0, 0
+        flops_i, flops_i_base, density_i, c_density_i, l_density_i, g_density_i = 0, 0, 0, 0, 0, 0
         flops_i_fwd, flops_i_base_fwd = 0, 0
         flops_i_bwd, flops_i_base_bwd = 0, 0
         ctr = 0
         ctr_c = 0
         ctr_l = 0
+        ctr_g = 0
         for name, param in model.named_parameters():
             # https://openai.com/blog/ai-and-compute/
             prefix = name.split('.')[0]
@@ -152,11 +178,13 @@ class PerformanceModel:
                 if 'fc' in name or 'classifier' in name:
                     l_density = density
                     ctr_l+=1
-                density_g = 1.0
+
                 if param.grad is not None:
-                    density_g = (torch.count_nonzero(param.grad) / torch.numel(param.grad)).numpy()
+                    ctr_g+=1
+                    g_density = (torch.count_nonzero(param.grad) / torch.numel(param.grad)).numpy()
+                    g_density_i += g_density
                     flops_i_n_fwd = self.macs[prefix][0] * 2 * density  # fwd
-                    flops_i_n_bwd = 2 * flops_i_n_fwd * density_g / ac# bwd = 2*fwd*g_sparsity/ac
+                    flops_i_n_bwd = 2 * flops_i_n_fwd * g_density / ac# bwd = 2*fwd*g_sparsity/ac
                     flops_i_fwd += flops_i_n_fwd
                     flops_i_bwd += flops_i_n_bwd
                     flops_i += flops_i_n_fwd + flops_i_n_bwd
@@ -179,7 +207,7 @@ class PerformanceModel:
                     flops_i_base += flops_i_n_fwd
 
         return flops_i * 1e-9, flops_i_base * 1e-9, 1 - density_i / ctr, flops_i_fwd, \
-               flops_i_base_fwd, flops_i_bwd, flops_i_base_bwd, 1 - c_density_i / ctr_c, 1 - l_density_i / ctr_l
+               flops_i_base_fwd, flops_i_bwd, flops_i_base_bwd, 1 - c_density_i / ctr_c, 1 - l_density_i / ctr_l, 1-g_density_i / ctr_g
 
     def print_memstats(self, batch_idx, interval):
         if batch_idx % interval == 0:

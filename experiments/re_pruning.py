@@ -28,7 +28,7 @@ class REPruning:
         self.kwargs = {'num_workers': 1, 'pin_memory': True} if self.use_cuda else {}
         self.device = torch.device("cuda" if self.use_cuda else "cpu")
         self.performance_model = PerformanceModel(model, train_loader, config, overhead_re_pruning=True)
-        self.gradient_diversity = GradientDiversityTopKGradients(config.get('SPECIFICATION', 'lb', int), 1) #Only required for G Norm & Accum functionality
+        self.gradient_diversity = GradientDiversityTopKGradients(config.get('SPECIFICATION', 'lb', int), 3) #Only required for G Norm & Accum functionality
         self.conv_pruning = RePruningConvDet(self.config.get('SPECIFICATION', 'softness_c', float),
                                              self.config.get('SPECIFICATION', 'magnitude_t_c', float),
                                              self.config.get('SPECIFICATION', 'metric_t_c', float),
@@ -60,6 +60,7 @@ class REPruning:
         # TODO make some kind of batch mode fro experiments
         # TODO check we do it at right batch (i.e. idx+1 or not)
         # TODO In master thesis correct norm from spectral (i.e. 2 norm) to frobenius
+        # TODO make grad/weights pruning optional switches
     def dispatch(self):
         torch.manual_seed(self.config.get('OTHER', 'seed', int))
         self.__train()
@@ -107,6 +108,7 @@ class REPruning:
                           '\nCurrent Sparsity',self.performance_model.sparsity_current,
                           '\nCurrent Channel Sparsity', self.performance_model.c_sparsity_current,
                           '\nCurrent Linear Sparsity', self.performance_model.l_sparsity_current,
+                          '\nCurrent Gradient Sparsity', self.performance_model.g_sparsity_current,
                           '\nCurrent Relative Overhead', self.performance_model.oh / self.performance_model.flops_current,
                           flush=True)
                 self.logger.log('total_su', self.performance_model.flops_accumulated_base/self.performance_model.flops_accumulated)

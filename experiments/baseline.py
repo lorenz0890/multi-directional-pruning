@@ -28,7 +28,6 @@ class Baseline:
         self.use_cuda = not config.get('OTHER', 'no_cuda', bool) and torch.cuda.is_available()
         self.kwargs = {'num_workers': 1, 'pin_memory': True} if self.use_cuda else {}
         self.device = torch.device("cuda" if self.use_cuda else "cpu")
-        self.performance_model = PerformanceModel(model, train_loader)
         self.gradient_diversity = GradientDiversityTopKGradients(1, 1)  # Only required for gradient normalization
         self.logger = logger
         self.optimizer = SGD(self.model.parameters(), lr=self.config.get('SPECIFICATION', 'lr', float), weight_decay=0.0)
