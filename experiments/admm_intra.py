@@ -20,7 +20,7 @@ class ADMMIntra:
         self.use_cuda = not config.get('OTHER', 'no_cuda', bool) and torch.cuda.is_available()
         self.kwargs = {'num_workers': 1, 'pin_memory': True} if self.use_cuda else {}
         self.device = torch.device("cuda" if self.use_cuda else "cpu")
-        self.performance_model = PerformanceModel(model, train_loader)
+        self.performance_model = PerformanceModel(model, train_loader, config)
 
     def dispatch(self):
         torch.manual_seed(self.config.get('OTHER', 'seed', int))
@@ -46,8 +46,11 @@ class ADMMIntra:
                 output = model(data)
                 loss = regularized_nll_loss(config, model, output, target)
                 loss.backward()
-                optimizer.step()
                 self.performance_model.eval(model, 1)
+                if (batch_idx + 1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
+                    self.performance_model.print_perf_stats()
+                optimizer.step()
+
             self.__test(config, model, device, test_loader)
 
         Z, U = initialize_Z_and_U(model)
@@ -60,8 +63,11 @@ class ADMMIntra:
                 output = model(data)
                 loss = admm_loss(config, device, model, Z, U, output, target)
                 loss.backward()
-                optimizer.step()
                 self.performance_model.eval(model, 1)
+                if (batch_idx + 1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
+                    self.performance_model.print_perf_stats()
+                optimizer.step()
+
             X = update_X(model)
             Z = update_Z_l1(X, U, config) if config.get('SPECIFICATION', 'l1', bool) else update_Z(X, U, config)
             U = update_U(U, X, Z)
@@ -98,6 +104,9 @@ class ADMMIntra:
                 output = model(data)
                 loss = F.nll_loss(output, target)
                 loss.backward()
-                optimizer.prune_step(mask)
                 self.performance_model.eval(model, 1)
+                if (batch_idx + 1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
+                    self.performance_model.print_perf_stats()
+                optimizer.prune_step(mask)
+
             self.__test(config, model, device, test_loader)

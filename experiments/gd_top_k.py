@@ -23,7 +23,7 @@ class GDTopK:
         self.use_cuda = not config.get('OTHER', 'no_cuda', bool) and torch.cuda.is_available()
         self.kwargs = {'num_workers': 1, 'pin_memory': True} if self.use_cuda else {}
         self.device = torch.device("cuda" if self.use_cuda else "cpu")
-        self.performance_model = PerformanceModel(model, train_loader)
+        self.performance_model = PerformanceModel(model, train_loader, config, overhead_gd_top_k=True)
         self.gradient_diversity = GradientDiversityTopKGradients(config.get('SPECIFICATION', 'lb', int), config.get('SPECIFICATION', 'k', int))
 
     def dispatch(self):
@@ -48,10 +48,14 @@ class GDTopK:
                 self.gradient_diversity.norm_grads(model)
                 self.gradient_diversity.accum_grads(model)
                 self.gradient_diversity.update_gd(batch_idx)
+                self.gradient_diversity.reset_accum_grads(batch_idx)
                 self.gradient_diversity.select_delete_grads(batch_idx)
                 self.gradient_diversity.delete_selected_grads(model)
-                optimizer.step()
                 self.performance_model.eval(model)
+                if (batch_idx + 1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
+                    self.performance_model.print_perf_stats()
+
+                optimizer.step()
             self.__test(config, model, device, test_loader)
 
 

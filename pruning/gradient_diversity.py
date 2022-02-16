@@ -36,5 +36,6 @@ class GradientDiversity:
                 else:
                     self.accum_g[n] += p.grad
 
-    def reset_accum_grads(self):
-        self.accum_g = {}
+    def reset_accum_grads(self, idx = 1):
+        if (idx+1) % self.lb == 0:
+            self.accum_g = {}

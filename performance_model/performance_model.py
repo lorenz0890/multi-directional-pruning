@@ -96,7 +96,7 @@ class PerformanceModel:
     def __estimate_overhead_gd_top_k(self, model):
         # https://coek.info/pdf-algorithms-54ed9513cfa623e30da35434ea7edcc833265.html
         # https://mast.queensu.ca/~andrew/notes/pdf/2010a.pdf
-        oh_search_space_iteration = 0, 0
+        oh_search_space_iteration = 0
         for name, param in model.named_parameters():
             prefix = name.split('.')[0]
             postfix = name.split('.')[1]
@@ -121,16 +121,16 @@ class PerformanceModel:
         #Assumptions: regularized baseline with gradient normalzation
         oh_grad_accumulation, oh_re_pruning, oh_gd_top_k, oh_gd_top_k_mc = 0, 0, 0, 0
         if self.est_oh_re_pruning or self.est_oh_gd_top_k or self.est_oh_gd_top_k_mc:
-            oh_grad_accumulation = self.__estimate_overhead_grad_accumulation(model)
+            oh_grad_accumulation = self.__estimate_overhead_grad_accumulation(model).item()
         if self.est_oh_gd_top_k:
-            oh_gd_top_k = self.__estimate_overhead_gd_top_k(model)
+            oh_gd_top_k = self.__estimate_overhead_gd_top_k(model).item()
         if self.est_oh_re_pruning:
-            oh_re_pruning = self.__estimate_overhead_re_pruning_search(model)
-            oh_re_pruning += self.__estimate_overhead_mask_computation(model)
-            oh_re_pruning += self.__estimate_overhead_mask_application(model)
+            oh_re_pruning = self.__estimate_overhead_re_pruning_search(model).item()
+            oh_re_pruning += self.__estimate_overhead_mask_computation(model).item()
+            oh_re_pruning += self.__estimate_overhead_mask_application(model).item()
         if self.est_oh_gd_top_k_mc:
-            oh_gd_top_k_mc = self.__estimate_overhead_gd_top_k(model)
-        return (oh_gd_top_k_mc + oh_gd_top_k + oh_re_pruning + oh_grad_accumulation).item()* 1e-9 #GFLOPs
+            oh_gd_top_k_mc = self.__estimate_overhead_gd_top_k(model).item()
+        return (oh_gd_top_k_mc + oh_gd_top_k + oh_re_pruning + oh_grad_accumulation)* 1e-9 #GFLOPs
 
 
 
@@ -243,3 +243,21 @@ class PerformanceModel:
                         pass
                 print('Referenced objects:', ctr)
                 print('Referenced objects size:', ctr_mem)
+
+    def print_perf_stats(self):
+        print('Total SU', self.flops_accumulated_base / self.flops_accumulated,
+              '\nCurrent SU', self.flops_current_base / self.flops_current,
+              '\nTotal SU FWD',
+              self.flops_accumulated_base_fwd / self.flops_accumulated_fwd,
+              '\nCurrent SU FWD',
+              self.flops_current_base_fwd / self.flops_current_fwd,
+              '\nTotal SU BWD',
+              self.flops_accumulated_base_bwd / self.flops_accumulated_bwd,
+              '\nCurrent SU BWD',
+              self.flops_current_base_bwd / self.flops_current_bwd,
+              '\nCurrent Sparsity', self.sparsity_current,
+              '\nCurrent Channel Sparsity', self.c_sparsity_current,
+              '\nCurrent Linear Sparsity', self.l_sparsity_current,
+              '\nCurrent Gradient Sparsity', self.g_sparsity_current,
+              '\nCurrent Relative Overhead', self.oh / self.flops_current,
+              flush=True)

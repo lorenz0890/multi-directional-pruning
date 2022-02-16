@@ -26,11 +26,12 @@ def main():
     experiment_factory = ExperimentFactory()
 
     #config.load('configs/admm_retrain/lenet_mnist.ini')
-    #config.load('configs/admm_retrain/x_alexnet_cifar10.ini')
-    #config.load('configs/admm_retrain/vgg16_cifar10_2.ini')
+    #config.load('configs/admm_retrain/alexnet_cifar10.ini')
+    #config.load('configs/admm_retrain/vgg16_cifar10.ini')
 
     #config.load('configs/admm_intra/lenet_mnist.ini')
-    #config.load('configs/admm_intra/x_alexnet_cifar10.ini')
+    #config.load('configs/admm_intra/alexnet_cifar10.ini')
+    #config.load('configs/admm_retrain/vgg16_cifar10.ini')
 
     #config.load('configs/gd_top_k/lenet_mnist.ini')
     #config.load('configs/gd_top_k/x_alexnet_cifar10.ini')
@@ -41,16 +42,19 @@ def main():
     #config.load('configs/gd_top_k_mc_ac/lenet_mnist.ini')
 
     #config.load('configs/gd_top_k_mc_ac_dk/lenet_mnist.ini')
-    #config.load('configs/gd_top_k_mc_ac_dk/x_alexnet_cifar10.ini')
-    '''
+    #config.load('configs/gd_top_k_mc_ac_dk/alexnet_cifar10.ini')
+    #config.load('configs/gd_top_k_mc_ac_dk/vgg8_cifar10.ini')
+    config.load('configs/gd_top_k_mc_ac_dk/mobilenet_v3_s_cifar10.ini')
+
     #config.load('configs/re_pruning/lenet_mnist.ini')
-    config.load('configs/re_pruning/alexnet_cifar10.ini')
+    #config.load('configs/re_pruning/alexnet_cifar10.ini')
     #config.load('configs/re_pruning/mobilenet_v3_s_cifar10.ini')
     #config.load('configs/re_pruning/vgg11_cifar10.ini')
     #config.load('configs/re_pruning/vgg16_cifar10_2.ini')
     #config.load('configs/re_pruning/resnet18_cifar10.ini')
 
-
+    #config.load('configs/baseline/vgg8_cifar10.ini')
+    #config.load('configs/baseline/wrn16_8_cifar10.ini')
     experiment = experiment_factory.get_experiment(config)
     experiment.dispatch()
 
@@ -70,6 +74,6 @@ def main():
             enablePrint()
             print(e, flush=True)
             blockPrint()
-
+    '''
 if __name__ == "__main__":
     main()

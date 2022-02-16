@@ -26,7 +26,7 @@ class MCGDTopKACDK:
         self.use_cuda = not config.get('OTHER', 'no_cuda', bool) and torch.cuda.is_available()
         self.kwargs = {'num_workers': 1, 'pin_memory': True} if self.use_cuda else {}
         self.device = torch.device("cuda" if self.use_cuda else "cpu")
-        self.performance_model = PerformanceModel(model, train_loader)
+        self.performance_model = PerformanceModel(model, train_loader, config, overhead_gd_top_k_mc=True)
         self.gradient_diversity = MonteCarloGDTopKGradients(config.get('SPECIFICATION', 'lb', int), config.get('SPECIFICATION', 'k', int),config.get('SPECIFICATION', 'se', int) , model)
         self.ac = config.get('SPECIFICATION', 'ac', int)
         self.loss_log = []
@@ -56,12 +56,16 @@ class MCGDTopKACDK:
                 data, target = data, target#data.to(device), target.to(device)
                 output = model(data)
                 loss = F.nll_loss(output, target, reduction='sum')#regularized_nll_loss(config, model, output, target)
+                l1 = sum(p.abs().sum() for p in self.model.parameters())
+                l2 = sum(p.norm() for p in self.model.parameters())
+                loss += self.config.get('SPECIFICATION', 'l1', float) * l1 + self.config.get('SPECIFICATION', 'l1',float) * l2
                 loss = loss / config.get('SPECIFICATION', 'ac', int)
                 loss.backward()
                 self.gradient_diversity.norm_grads(model)
                 self.gradient_diversity.update_epoch(epoch)
                 self.gradient_diversity.accum_grads(model)
                 self.gradient_diversity.update_gd(batch_idx)
+                self.gradient_diversity.reset_accum_grads(batch_idx)
 
                 self.loss_log.append(loss.item())
                 loss_m = sum(self.loss_log[-config.get('SPECIFICATION', 'lb', int):]) / len(self.loss_log[-config.get('SPECIFICATION', 'lb', int):])
@@ -85,11 +89,15 @@ class MCGDTopKACDK:
                 self.gradient_diversity.select_delete_grads(batch_idx, epoch)
                 self.gradient_diversity.delete_selected_grads(model)
 
+                self.performance_model.eval(model, self.ac)
+                if (batch_idx+1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
+                    self.performance_model.print_perf_stats()
+
                 #print(batch_idx+1, self.ac)
                 if (batch_idx+1) % int(self.ac) == 0 or (batch_idx+1) % len(train_loader) == 0:
                     optimizer.step()
                     optimizer.zero_grad(set_to_none=True)
-                self.performance_model.eval(model, self.ac)
+
 
             self.__test(config, model, device, test_loader)
 

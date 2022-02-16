@@ -22,10 +22,7 @@ class ADMMRetrain:
         self.use_cuda = not config.get('OTHER', 'no_cuda', bool) and torch.cuda.is_available()
         self.kwargs = {'num_workers': 1, 'pin_memory': True} if self.use_cuda else {}
         self.device = torch.device("cuda" if self.use_cuda else "cpu")
-        self.performance_model = PerformanceModel(model, train_loader)
-
-
-
+        self.performance_model = PerformanceModel(model, train_loader, config)
 
     def dispatch(self):
         torch.manual_seed(self.config.get('OTHER', 'seed', int))
@@ -37,7 +34,6 @@ class ADMMRetrain:
         self.__test(self.config, self.model, self.device, self.test_loader)
         self.__retrain(self.config, self.model, mask, self.device, self.train_loader, self.test_loader, optimizer)
 
-
     def __train(self, config, model, device, train_loader, test_loader, optimizer):
         for epoch in range(config.get('SPECIFICATION', 'pre_epochs', int)):
             print('Pre epoch: {}'.format(epoch + 1))
@@ -48,8 +44,11 @@ class ADMMRetrain:
                 output = model(data)
                 loss = regularized_nll_loss(config, model, output, target)
                 loss.backward()
-                optimizer.step()
                 self.performance_model.eval(model)
+                if (batch_idx + 1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
+                    self.performance_model.print_perf_stats()
+                optimizer.step()
+
             self.__test(config, model, device, test_loader)
 
         Z, U = initialize_Z_and_U(model)
@@ -62,8 +61,12 @@ class ADMMRetrain:
                 output = model(data)
                 loss = admm_loss(config, device, model, Z, U, output, target)
                 loss.backward()
-                optimizer.step()
+
                 self.performance_model.eval(model)
+                if (batch_idx + 1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
+                    self.performance_model.print_perf_stats()
+
+                optimizer.step()
             X = update_X(model)
             Z = update_Z_l1(X, U, config) if config.get('SPECIFICATION', 'l1', bool) else update_Z(X, U, config)
             U = update_U(U, X, Z)
@@ -101,7 +104,9 @@ class ADMMRetrain:
                 output = model(data)
                 loss = F.nll_loss(output, target)
                 loss.backward()
-                optimizer.prune_step(mask)
                 self.performance_model.eval(model)
+                if (batch_idx + 1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
+                    self.performance_model.print_perf_stats()
+                optimizer.prune_step(mask)
 
             self.__test(config, model, device, test_loader)

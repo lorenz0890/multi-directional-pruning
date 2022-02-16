@@ -91,7 +91,7 @@ class REPruning:
                     self.gradient_diversity.update_gd(batch_idx)
                     self.conv_pruning.compute_mask(self.model, self.gradient_diversity.accum_g, batch_idx)
                     self.linear_pruning.compute_mask(self.model, self.gradient_diversity.accum_g, batch_idx)
-                    #self.gradient_diversity.reset_accum_grads() # clears accumulated grads
+                    self.gradient_diversity.reset_accum_grads() # clears accumulated grads
                     self.conv_pruning.apply_mask(self.model)
                     self.linear_pruning.apply_mask(self.model)
 
@@ -104,18 +104,7 @@ class REPruning:
 
                 #print(batch_idx, flush=True)
                 if (batch_idx+1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
-                    print('Total SU', self.performance_model.flops_accumulated_base/self.performance_model.flops_accumulated,
-                          '\nCurrent SU', self.performance_model.flops_current_base/self.performance_model.flops_current,
-                          '\nTotal SU FWD',self.performance_model.flops_accumulated_base_fwd / self.performance_model.flops_accumulated_fwd,
-                          '\nCurrent SU FWD', self.performance_model.flops_current_base_fwd / self.performance_model.flops_current_fwd,
-                          '\nTotal SU BWD',self.performance_model.flops_accumulated_base_bwd / self.performance_model.flops_accumulated_bwd,
-                          '\nCurrent SU BWD',self.performance_model.flops_current_base_bwd / self.performance_model.flops_current_bwd,
-                          '\nCurrent Sparsity',self.performance_model.sparsity_current,
-                          '\nCurrent Channel Sparsity', self.performance_model.c_sparsity_current,
-                          '\nCurrent Linear Sparsity', self.performance_model.l_sparsity_current,
-                          '\nCurrent Gradient Sparsity', self.performance_model.g_sparsity_current,
-                          '\nCurrent Relative Overhead', self.performance_model.oh / self.performance_model.flops_current,
-                          flush=True)
+                    self.performance_model.print_perf_stats()
                 self.logger.log('total_su', self.performance_model.flops_accumulated_base/self.performance_model.flops_accumulated)
 
             self.__test()
