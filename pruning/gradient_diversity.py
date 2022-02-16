@@ -1,7 +1,7 @@
 import torch
 from abc import ABC
 
-class GradientDiversity(ABC):
+class GradientDiversity:
     def __init__(self, lb):
         self.lb = lb
         self.global_gd = 0.0
@@ -12,17 +12,16 @@ class GradientDiversity(ABC):
         for n in self.accum_g :
             self.layer_gd[n] = self.lb / torch.pow(torch.norm(self.accum_g [n]), 2)
 
-
     def update_ggd(self):
         self.global_gd = 0
         for n in self.layer_gd:
             self.global_gd += self.layer_gd[n]
 
     def update_gd(self, idx):
-        if idx % self.lb == 0:
+        if (idx+1) % self.lb == 0:
             self.update_lgd()
             self.update_ggd()
-            self.reset_accum_grads()
+            #self.reset_accum_grads()
 
     def norm_grads(self, model):
         for i, (n, p) in enumerate(model.named_parameters()):

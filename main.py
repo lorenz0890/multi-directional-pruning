@@ -42,11 +42,13 @@ def main():
 
     #config.load('configs/gd_top_k_mc_ac_dk/lenet_mnist.ini')
     #config.load('configs/gd_top_k_mc_ac_dk/x_alexnet_cifar10.ini')
-
-    config.load('configs/re_pruning/lenet_mnist.ini')
-    #config.load('configs/re_pruning/alexnet_cifar10.ini')
+    '''
+    #config.load('configs/re_pruning/lenet_mnist.ini')
+    config.load('configs/re_pruning/alexnet_cifar10.ini')
+    #config.load('configs/re_pruning/mobilenet_v3_s_cifar10.ini')
+    #config.load('configs/re_pruning/vgg11_cifar10.ini')
     #config.load('configs/re_pruning/vgg16_cifar10_2.ini')
-    #config.load('configs/re_pruning/resnet18_cifar10_2.ini')
+    #config.load('configs/re_pruning/resnet18_cifar10.ini')
 
 
     experiment = experiment_factory.get_experiment(config)
@@ -68,6 +70,6 @@ def main():
             enablePrint()
             print(e, flush=True)
             blockPrint()
-    '''
+
 if __name__ == "__main__":
     main()

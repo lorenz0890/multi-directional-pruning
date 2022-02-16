@@ -9,7 +9,7 @@ class GradientDiversityTopKGradients(GradientDiversity):
         self.k = k
 
     def select_delete_grads(self, idx):
-        if idx % self.lb == 0:
+        if (idx+1) % self.lb == 0:
             self.delete_g = []
             lgd_cpy = self.layer_gd.copy()
             for i in range(0, self.k):

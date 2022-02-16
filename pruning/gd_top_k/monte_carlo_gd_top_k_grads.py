@@ -61,7 +61,7 @@ class MonteCarloGDTopKGradients(GradientDiversity):
         self.k = k
 
     def accum_grads(self, model):
-        if self.epoch % self.se == 0:
+        if (self.epoch+1) % self.se == 0:
             for i, (n, p) in enumerate(model.named_parameters()):
                 if not 'bias' in n:
                     if not n in self.accum_g:
@@ -70,8 +70,8 @@ class MonteCarloGDTopKGradients(GradientDiversity):
                         self.accum_g[n] += p.grad
 
     def select_delete_grads(self, idx, epoch):
-        if epoch % self.se == 0:
-            if idx % self.lb == 0:
+        if (epoch+1) % self.se == 0:
+            if (idx+1) % self.lb == 0:
                     self.delete_g = []
                     lgd_cpy = self.layer_gd.copy()
                     for i in range(0, self.k):
@@ -82,7 +82,7 @@ class MonteCarloGDTopKGradients(GradientDiversity):
                     self.__update_probabilities()
                     print(self.probabilities)
         else:
-            if idx % self.lb == 0:
+            if (idx+1) % self.lb == 0:
                 self.__select_delete_grads_probabilistic()
                 #print(self.delete_g, flush=True)
 

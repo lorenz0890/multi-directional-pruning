@@ -74,9 +74,13 @@ class PerformanceModel:
             postfix = name.split('.')[1]
             if postfix != 'bias':
                 if 'conv' in name or 'features' in name:
-                    oh_mask_computation += self.config.get('SPECIFICATION', 'prune_c', int) * torch.numel(param) / self.config.get('SPECIFICATION', 'lb',int)# TODO this can still be optimized
+                    oh_mask_computation += (self.config.get('SPECIFICATION', 'metric_q_c', float) * self.config.get('SPECIFICATION', 'sample_c', int)
+                                            * torch.numel(param)
+                                            / self.config.get('SPECIFICATION', 'lb',int))# TODO this can still be optimized
                 if 'fc' in name or 'classifier' in name:
-                    oh_mask_computation += self.config.get('SPECIFICATION', 'prune_l', int) * torch.numel(param) / self.config.get('SPECIFICATION', 'lb',int)# TODO this can still be optimized
+                    oh_mask_computation += (self.config.get('SPECIFICATION', 'metric_q_l', float) * self.config.get('SPECIFICATION', 'sample_l', int)
+                                            * torch.numel(param)
+                                            / self.config.get('SPECIFICATION', 'lb',int))# TODO this can still be optimized
         return oh_mask_computation
 
     def __estimate_overhead_mask_application(self, model):

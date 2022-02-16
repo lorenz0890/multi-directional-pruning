@@ -12,6 +12,7 @@ from pruning import RePruningConvDet
 from optimizer import PruneAdam
 from model import LeNet, AlexNet
 from performance_model import PerformanceModel
+from pruning.re_pruning.re_pruning_global_det import RePruningGlobalDet
 from utils import regularized_nll_loss, admm_loss, \
     initialize_Z_and_U, update_X, update_Z, update_Z_l1, update_U, \
     print_convergence, print_prune, apply_prune, apply_l1_prune
@@ -28,23 +29,23 @@ class REPruning:
         self.kwargs = {'num_workers': 1, 'pin_memory': True} if self.use_cuda else {}
         self.device = torch.device("cuda" if self.use_cuda else "cpu")
         self.performance_model = PerformanceModel(model, train_loader, config, overhead_re_pruning=True)
-        self.gradient_diversity = GradientDiversityTopKGradients(config.get('SPECIFICATION', 'lb', int), 3) #Only required for G Norm & Accum functionality
+        self.gradient_diversity = GradientDiversity(config.get('SPECIFICATION', 'lb', int)) #Only required for G Norm & Accum functionality
+
         self.conv_pruning = RePruningConvDet(self.config.get('SPECIFICATION', 'softness_c', float),
                                              self.config.get('SPECIFICATION', 'magnitude_t_c', float),
-                                             self.config.get('SPECIFICATION', 'metric_t_c', float),
+                                             self.config.get('SPECIFICATION', 'metric_q_c', float),
                                              self.config.get('SPECIFICATION', 'lr', float),
                                              self.config.get('SPECIFICATION', 'sample_c', int),
                                              config.get('SPECIFICATION', 'lb', int),
-                                             self.config.get('SPECIFICATION', 'scale_c', float),
-                                             self.config.get('SPECIFICATION', 'prune_c', int))
+                                             self.config.get('SPECIFICATION', 'scale_c', float))
         self.linear_pruning = RePruningLinearDet(self.config.get('SPECIFICATION', 'softness_l', float),
                                              self.config.get('SPECIFICATION', 'magnitude_t_l', float),
-                                             self.config.get('SPECIFICATION', 'metric_t_l', float),
+                                             self.config.get('SPECIFICATION', 'metric_q_l', float),
                                              self.config.get('SPECIFICATION', 'lr', float),
                                              self.config.get('SPECIFICATION', 'sample_l', int),
                                              config.get('SPECIFICATION', 'lb', int),
-                                             self.config.get('SPECIFICATION', 'scale_l', float),
-                                             self.config.get('SPECIFICATION', 'prune_l', int))
+                                             self.config.get('SPECIFICATION', 'scale_l', float))
+
         self.logger = logger
         self.optimizer = SGD(self.model.parameters(), lr=self.config.get('SPECIFICATION', 'lr', float),
                              weight_decay=0.0)
@@ -61,6 +62,7 @@ class REPruning:
         # TODO check we do it at right batch (i.e. idx+1 or not)
         # TODO In master thesis correct norm from spectral (i.e. 2 norm) to frobenius
         # TODO make grad/weights pruning optional switches
+        # TODO quantile instead of threshold and number of attempts?
     def dispatch(self):
         torch.manual_seed(self.config.get('OTHER', 'seed', int))
         self.__train()
@@ -86,11 +88,13 @@ class REPruning:
                 self.gradient_diversity.norm_grads(self.model)
                 if epoch <= self.config.get('SPECIFICATION', 'prune_epochs', int):
                     self.gradient_diversity.accum_grads(self.model)
+                    self.gradient_diversity.update_gd(batch_idx)
                     self.conv_pruning.compute_mask(self.model, self.gradient_diversity.accum_g, batch_idx)
                     self.linear_pruning.compute_mask(self.model, self.gradient_diversity.accum_g, batch_idx)
+                    #self.gradient_diversity.reset_accum_grads() # clears accumulated grads
                     self.conv_pruning.apply_mask(self.model)
                     self.linear_pruning.apply_mask(self.model)
-                    self.gradient_diversity.update_gd(batch_idx) # clears accumulated grads as side effect
+
                 if epoch > self.config.get('SPECIFICATION', 'prune_epochs', int):
                     self.conv_pruning.apply_threshold(self.model)
                     self.linear_pruning.apply_threshold(self.model)
@@ -98,7 +102,8 @@ class REPruning:
                 self.performance_model.eval(self.model, 1)
                 self.optimizer.step()
 
-                if batch_idx % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
+                #print(batch_idx, flush=True)
+                if (batch_idx+1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
                     print('Total SU', self.performance_model.flops_accumulated_base/self.performance_model.flops_accumulated,
                           '\nCurrent SU', self.performance_model.flops_current_base/self.performance_model.flops_current,
                           '\nTotal SU FWD',self.performance_model.flops_accumulated_base_fwd / self.performance_model.flops_accumulated_fwd,
