@@ -78,13 +78,11 @@ class MonteCarloGDTopKGradients(GradientDiversity):
                         min_lgd = min(self.layer_gd, key=lgd_cpy.get)
                         self.delete_g.append(min_lgd)
                         lgd_cpy[min_lgd] = float('inf')
-                    #print(self.delete_g, flush=True)
                     self.__update_probabilities()
-                    print(self.probabilities)
         else:
             if (idx+1) % self.lb == 0:
                 self.__select_delete_grads_probabilistic()
-                #print(self.delete_g, flush=True)
+                print(self.delete_g, flush=True)
 
     def delete_selected_grads(self, model):
         for n in self.delete_g:

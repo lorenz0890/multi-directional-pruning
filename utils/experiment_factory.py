@@ -1,7 +1,8 @@
 from torchvision import datasets, transforms
 import torch
 
-from experiments import ADMMRetrain, ADMMIntra, GDTopK, MCGDTopK, MCGDTopKACDK, MCGDTopKAC, Baseline
+from experiments import ADMMRetrain, ADMMIntra, GDTopK, MCGDTopK, MCGDTopKACDK, MCGDTopKAC, Baseline, \
+    MCGDTopKACDKADMMIntra, REPruningMCGDTopKACDKADMMIntra
 from experiments import REPruning
 from utils import DataFactory, ModelFactory
 from utils import Logger
@@ -31,5 +32,9 @@ class ExperimentFactory:
             experiment = REPruning(model, train_loader, test_loader, config, Logger(config.get_raw()))
         if config.get('EXPERIMENT', 'name', str) == 'baseline':
             experiment = Baseline(model, train_loader, test_loader, config, Logger(config.get_raw()))
+        if config.get('EXPERIMENT', 'name', str) == 'gd_top_k_mc_ac_dk_admm_intra':
+            experiment = MCGDTopKACDKADMMIntra(model, train_loader, test_loader, config, Logger(config.get_raw()))
+        if config.get('EXPERIMENT', 'name', str) == 're_pruning_gd_top_k_mc_ac_dk_admm_intra':
+            experiment = REPruningMCGDTopKACDKADMMIntra(model, train_loader, test_loader, config, Logger(config.get_raw()))
 
         return experiment

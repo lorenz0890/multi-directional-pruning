@@ -108,7 +108,7 @@ class PerformanceModel:
         return oh_search_space_iteration
 
     def __estimate_overhead_grad_accumulation(self, model):
-        oh_grad_accumulation = 0  # TODO ensure that if multiple methods combined, accum is only accounted for once
+        oh_grad_accumulation = 0
         for name, param in model.named_parameters():
             prefix = name.split('.')[0]
             postfix = name.split('.')[1]
@@ -116,6 +116,17 @@ class PerformanceModel:
                 if 'conv' in name or 'features' in name or 'fc' in name or 'classifier' in name:
                     oh_grad_accumulation += torch.count_nonzero(param)  # accumulation of gradients every batch
         return oh_grad_accumulation
+
+    def __estimate_overhead_admm(self, model):
+        oh_admm = 0
+        for name, param in model.named_parameters():
+            prefix = name.split('.')[0]
+            postfix = name.split('.')[1]
+            if postfix != 'bias':
+                if 'conv' in name or 'features' in name or 'fc' in name or 'classifier' in name:
+                    oh_admm += torch.numel(param) * 3 + 2 * (np.prod(list(param.shape))) # u, z + norm
+                    # TODO uz update
+        return oh_admm
 
     def __estimate_overhead(self, model):
         #Assumptions: regularized baseline with gradient normalzation
@@ -126,8 +137,8 @@ class PerformanceModel:
             oh_gd_top_k = self.__estimate_overhead_gd_top_k(model).item()
         if self.est_oh_re_pruning:
             oh_re_pruning = self.__estimate_overhead_re_pruning_search(model).item()
-            oh_re_pruning += self.__estimate_overhead_mask_computation(model).item()
-            oh_re_pruning += self.__estimate_overhead_mask_application(model).item()
+            oh_re_pruning += self.__estimate_overhead_mask_computation(model)
+            oh_re_pruning += self.__estimate_overhead_mask_application(model)
         if self.est_oh_gd_top_k_mc:
             oh_gd_top_k_mc = self.__estimate_overhead_gd_top_k(model).item()
         return (oh_gd_top_k_mc + oh_gd_top_k + oh_re_pruning + oh_grad_accumulation)* 1e-9 #GFLOPs
@@ -159,7 +170,63 @@ class PerformanceModel:
         self.oh = self.__estimate_overhead(model)
 
     def __current_flops(self, model, ac):
+        flops_i, flops_i_base, nonzero_i, c_nonzero_i, l_nonzero_i, g_nonzero_i = 0, 0, 0, 0, 0, 0
+        flops_i_fwd, flops_i_base_fwd = 0, 0
+        flops_i_bwd, flops_i_base_bwd = 0, 0
+        total = 0
+        total_c = 0
+        total_l = 0
+        total_g = 0
+        for name, param in model.named_parameters():
+            # https://openai.com/blog/ai-and-compute/
+            prefix = name.split('.')[0]
+            postfix = name.split('.')[1]
+            if postfix != 'bias':
+                nonzero = torch.count_nonzero(param).numpy()
+                c_nonzero = 0.0
+                l_nonzero = 0.0
+                total += torch.numel(param)
+                if 'conv' in name or 'features' in name:
+                    # print(name, density)
+                    c_nonzero = nonzero
+                    total_c += torch.numel(param)
+                if 'fc' in name or 'classifier' in name:
+                    l_nonzero = nonzero
+                    total_l += torch.numel(param)
+
+                if param.grad is not None:
+                    total_g += torch.numel(param.grad)
+                    g_nonzero = torch.count_nonzero(param.grad)
+                    g_nonzero_i += g_nonzero
+                    flops_i_n_fwd = self.macs[prefix][0] * 2 * (nonzero / torch.numel(param)) # fwd
+                    flops_i_n_bwd = 2 * flops_i_n_fwd * (g_nonzero/torch.numel(param.grad)).numpy() / ac  # bwd = 2*fwd*g_sparsity/ac
+                    flops_i_fwd += flops_i_n_fwd
+                    flops_i_bwd += flops_i_n_bwd
+                    flops_i += flops_i_n_fwd + flops_i_n_bwd
+                else:
+                    flops_i_fwd += self.macs[prefix][0] * 2 * (nonzero / torch.numel(param)).numpy()
+                    flops_i += self.macs[prefix][0] * 2 * (nonzero / torch.numel(param)).numpy()
+
+                nonzero_i += nonzero
+                c_nonzero_i += c_nonzero
+                l_nonzero_i += l_nonzero
+
+                if param.grad is not None:
+                    flops_i_n_fwd = self.macs[prefix][0] * 2  # fwd,bwd updaten
+                    flops_i_n_bwd = 2 * flops_i_n_fwd
+                    flops_i_base_fwd += flops_i_n_fwd
+                    flops_i_base_bwd += flops_i_n_bwd
+                    flops_i_base += flops_i_n_fwd + flops_i_n_bwd
+                else:
+                    flops_i_n_fwd = self.macs[prefix][0] * 2
+                    flops_i_base += flops_i_n_fwd
+
+        return flops_i * 1e-9, flops_i_base * 1e-9, 1 - nonzero_i / total, flops_i_fwd, \
+               flops_i_base_fwd, flops_i_bwd, flops_i_base_bwd, 1 - c_nonzero_i / total_c, 1 - l_nonzero_i / total_l, (1 - g_nonzero_i / total_g).numpy()
+
+    def __current_flops_deprecated(self, model, ac):
         flops_i, flops_i_base, density_i, c_density_i, l_density_i, g_density_i = 0, 0, 0, 0, 0, 0
+
         flops_i_fwd, flops_i_base_fwd = 0, 0
         flops_i_bwd, flops_i_base_bwd = 0, 0
         ctr = 0
