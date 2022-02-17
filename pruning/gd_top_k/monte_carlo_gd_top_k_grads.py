@@ -70,7 +70,7 @@ class MonteCarloGDTopKGradients(GradientDiversity):
                         self.accum_g[n] += p.grad
 
     def select_delete_grads(self, idx, epoch):
-        if (epoch+1) % self.se == 0:
+        if (epoch+1) % self.se == 0: # TODO check this is right -  shouldnt we always sample at 0?
             if (idx+1) % self.lb == 0:
                     self.delete_g = []
                     lgd_cpy = self.layer_gd.copy()
