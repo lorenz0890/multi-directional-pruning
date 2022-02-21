@@ -19,8 +19,11 @@ from utils import regularized_nll_loss, admm_loss, \
 from torchvision import datasets, transforms
 from tqdm import tqdm
 
+from utils.vis import Visualization
+
+
 class REPruning:
-    def __init__(self, model, train_loader, test_loader, config, logger):
+    def __init__(self, model, train_loader, test_loader, config, logger, visualization=None):
         self.model = model
         self.train_loader = train_loader
         self.test_loader = test_loader
@@ -28,7 +31,9 @@ class REPruning:
         self.use_cuda = not config.get('OTHER', 'no_cuda', bool) and torch.cuda.is_available()
         self.kwargs = {'num_workers': 1, 'pin_memory': True} if self.use_cuda else {}
         self.device = torch.device("cuda" if self.use_cuda else "cpu")
-        self.performance_model = PerformanceModel(model, train_loader, config, overhead_re_pruning=True)
+        self.logger = logger
+        self.visualization = visualization
+        self.performance_model = PerformanceModel(model, train_loader, config, overhead_re_pruning=True, logger=logger)
         self.gradient_diversity = GradientDiversity(config.get('SPECIFICATION', 'lb', int)) #Only required for G Norm & Accum functionality
 
         self.conv_pruning = RePruningConvDet(self.config.get('SPECIFICATION', 'softness_c', float),
@@ -46,28 +51,33 @@ class REPruning:
                                              config.get('SPECIFICATION', 'lb', int),
                                              self.config.get('SPECIFICATION', 'scale_l', float))
 
-        self.logger = logger
         self.optimizer = SGD(self.model.parameters(), lr=self.config.get('SPECIFICATION', 'lr', float),
                              weight_decay=0.0)
         self.scheduler = MultiStepLR(self.optimizer, milestones=self.config.get('SPECIFICATION', 'steps',
                                                                                 lambda a: [int(b) for b in
                                                                                            str(a).split(',')]),
                                                                                 gamma=config.get('SPECIFICATION', 'gamma', float))
+
+
         # TODO add overhead w/o mask application to performance model
         # TODO add overhead w/ mask application to performance model
         # TODO complete overhead w/ min search (O n log n) performance model
         # TODO encode hyper params in config TODO
         # TODO make logger for metrics OK
-        # TODO make some kind of batch mode fro experiments
+        # TODO make some kind of batch mode fro experiments OK
         # TODO check we do it at right batch (i.e. idx+1 or not)
         # TODO In master thesis correct norm from spectral (i.e. 2 norm) to frobenius
         # TODO make grad/weights pruning optional switches
-        # TODO quantile instead of threshold and number of attempts?
+        # TODO quantile instead of threshold and number of attempts? OK
     def dispatch(self):
         torch.manual_seed(self.config.get('OTHER', 'seed', int))
         self.__train()
         self.__test()
         print(self.performance_model.flops_accumulated, self.performance_model.flops_accumulated_base, flush=True)
+
+        self.logger.store()
+        if self.config.get('OTHER', 'vis_model', bool): self.visualization.visualize_model(self.model)
+
 
     def __train(self):
         for epoch in range(self.config.get('SPECIFICATION', 'epochs', int)):
@@ -100,12 +110,12 @@ class REPruning:
                     self.linear_pruning.apply_threshold(self.model)
 
                 self.performance_model.eval(self.model, 1)
-                self.optimizer.step()
-
-                #print(batch_idx, flush=True)
                 if (batch_idx+1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
                     self.performance_model.print_perf_stats()
-                self.logger.log('total_su', self.performance_model.flops_accumulated_base/self.performance_model.flops_accumulated)
+                self.performance_model.log_perf_stats()
+                self.performance_model.log_layer_sparsity(self.model)
+
+                self.optimizer.step()
 
             self.__test()
             self.scheduler.step()

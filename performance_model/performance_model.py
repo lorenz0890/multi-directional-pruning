@@ -6,9 +6,10 @@ from thop import profile
 
 class PerformanceModel:
     def __init__(self, model, train_loader, config, overhead_gd_top_k=False,
-                 overhead_gd_top_k_mc=False, overhead_re_pruning=False, ):
+                 overhead_gd_top_k_mc=False, overhead_re_pruning=False, logger = None):
 
         self.config = config
+        self.logger = logger
         self.est_oh_gd_top_k = overhead_gd_top_k
         self.est_oh_gd_top_k_mc = overhead_gd_top_k_mc
         self.est_oh_re_pruning = overhead_re_pruning
@@ -328,3 +329,32 @@ class PerformanceModel:
               '\nCurrent Gradient Sparsity', self.g_sparsity_current,
               '\nCurrent Relative Overhead', self.oh / self.flops_current,
               flush=True)
+
+    def log_perf_stats(self):
+        if self.logger is not None:
+            self.logger.log('total_su', float(self.flops_accumulated_base / self.flops_accumulated))
+            self.logger.log('current_su', float(self.flops_current_base / self.flops_current))
+            self.logger.log('total_su_fwd', float(self.flops_accumulated_base_fwd / self.flops_accumulated_fwd))
+            self.logger.log('current_su_fwd', float(self.flops_current_base_fwd / self.flops_current_fwd))
+            self.logger.log('total_su_bwd', float(self.flops_accumulated_base_bwd / self.flops_accumulated_bwd))
+            self.logger.log('current_su_bwd', float(self.flops_current_base_bwd / self.flops_current_bwd))
+            self.logger.log('current_sparsity', float(self.sparsity_current))
+            self.logger.log('current_channel_sparsity', float(self.c_sparsity_current))
+            self.logger.log('current_linear_sparsity', float(self.l_sparsity_current))
+            self.logger.log('current_gradient_sparsity', float(self.g_sparsity_current))
+            self.logger.log('current_relative_overhead', float(self.oh / self.flops_current))
+
+    def log_layer_sparsity(self, model):
+        if self.logger is not None:
+            for name, param in model.named_parameters():
+                prefix = name.split('.')[0]
+                postfix = name.split('.')[1]
+                if postfix != 'bias':
+                    if 'conv' in name or 'features' in name or 'fc' in name or 'classifier' in name:
+                        key = 'sparsity_{}'.format(name)
+                        sparsity = (1-torch.count_nonzero(param)/torch.numel(param)).item()
+                        self.logger.log(key, sparsity)
+                        if param.grad is not None:
+                            key = 'sparsity_grad_{}'.format(name)
+                            sparsity = (1 - torch.count_nonzero(param.grad) / torch.numel(param)).item()
+                            self.logger.log(key, sparsity)

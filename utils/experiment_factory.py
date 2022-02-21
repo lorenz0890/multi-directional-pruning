@@ -6,6 +6,8 @@ from experiments import ADMMRetrain, ADMMIntra, GDTopK, MCGDTopK, MCGDTopKACDK, 
 from experiments import REPruning
 from utils import DataFactory, ModelFactory
 from utils import Logger
+from utils.vis import Visualization
+
 
 class ExperimentFactory:
     def __init__(self):
@@ -29,7 +31,9 @@ class ExperimentFactory:
         if config.get('EXPERIMENT', 'name', str) == 'gd_top_k_mc_ac_dk':
             experiment = MCGDTopKACDK(model, train_loader, test_loader, config, Logger(config.get_raw()))
         if config.get('EXPERIMENT', 'name', str) == 're_pruning':
-            experiment = REPruning(model, train_loader, test_loader, config, Logger(config.get_raw()))
+            #experiment = REPruning(model, train_loader, test_loader, config, Logger(config.get_raw()))
+            experiment = REPruning(model, train_loader, test_loader, config,
+                                   Logger(config.get_raw()), Visualization(config.get_raw()))
         if config.get('EXPERIMENT', 'name', str) == 'baseline':
             experiment = Baseline(model, train_loader, test_loader, config, Logger(config.get_raw()))
         if config.get('EXPERIMENT', 'name', str) == 'gd_top_k_mc_ac_dk_admm_intra':
