@@ -37,7 +37,7 @@ def main():
     #config.load('configs/ablation_study/gd_top_k_mc/lenet_mnist.ini')
     #config.load('configs/ablation_study/gd_top_k_mc_ac/lenet_mnist.ini')
 
-    config.load('configs/gd_top_k_mc_ac_dk/lenet_mnist.ini')
+    #config.load('configs/gd_top_k_mc_ac_dk/lenet_mnist.ini')
     #config.load('configs/gd_top_k_mc_ac_dk/alexnet_cifar10.ini')
     #config.load('configs/gd_top_k_mc_ac_dk/vgg8_cifar10.ini')
     #config.load('configs/gd_top_k_mc_ac_dk/mobilenet_v3_s_cifar10.ini')

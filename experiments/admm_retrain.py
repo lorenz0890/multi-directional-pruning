@@ -37,6 +37,7 @@ class ADMMRetrain:
         self.__retrain(self.config, self.model, mask, self.device, self.train_loader, self.test_loader, optimizer)
         self.logger.store()
         if self.config.get('OTHER', 'vis_model', bool): self.visualization.visualize_model(self.model)
+        if self.config.get('OTHER', 'vis_log', bool): self.visualization.visualize_perfstats(self.logger)
         if self.config.get('OTHER', 'save_model', bool): torch.save(self.model.state_dict(),
                                                                     self.config.get('OTHER', 'out_path', str))
 
