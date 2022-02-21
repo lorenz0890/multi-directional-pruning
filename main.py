@@ -55,7 +55,7 @@ def main():
     #config.load('configs/baseline/vgg8_cifar10.ini')
     #config.load('configs/baseline/vgg8_bn_cifar10.ini')
     #config.load('configs/baseline/wrn16_8_cifar10.ini')
-    #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/lenet_mnist.ini')
+    config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/lenet_mnist.ini')
     #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/alexnet_cifar10.ini')
 
     experiment = experiment_factory.get_experiment(config)
