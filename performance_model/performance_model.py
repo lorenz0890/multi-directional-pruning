@@ -238,7 +238,7 @@ class PerformanceModel:
             # https://openai.com/blog/ai-and-compute/
             prefix = name.split('.')[0]
             postfix = name.split('.')[1]
-            if postfix != 'bias':
+            if not 'bias' in name:#postfix != 'bias':
                 density = (torch.count_nonzero(param) / torch.numel(param)).numpy()
                 c_density = 0.0
                 l_density = 0.0
@@ -349,7 +349,7 @@ class PerformanceModel:
             for name, param in model.named_parameters():
                 prefix = name.split('.')[0]
                 postfix = name.split('.')[1]
-                if postfix != 'bias':
+                if not 'bias' in name:
                     if 'conv' in name or 'features' in name or 'fc' in name or 'classifier' in name:
                         key = 'sparsity_{}'.format(name)
                         sparsity = (1-torch.count_nonzero(param)/torch.numel(param)).item()

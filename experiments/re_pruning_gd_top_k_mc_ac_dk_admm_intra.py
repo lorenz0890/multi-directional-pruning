@@ -17,7 +17,7 @@ from pruning import GradientDiversity, GradientDiversityTopKGradients, RePruning
 from pruning import RePruningConvDet
 
 class REPruningMCGDTopKACDKADMMIntra:
-    def __init__(self, model, train_loader, test_loader, config, logger):
+    def __init__(self, model, train_loader, test_loader, config, logger, visualization=None):
         self.model = model
         self.train_loader = train_loader
         self.test_loader = test_loader
@@ -25,7 +25,8 @@ class REPruningMCGDTopKACDKADMMIntra:
         self.use_cuda = not config.get('OTHER', 'no_cuda', bool) and torch.cuda.is_available()
         self.kwargs = {'num_workers': 1, 'pin_memory': True} if self.use_cuda else {}
         self.device = torch.device("cuda" if self.use_cuda else "cpu")
-
+        self.logger = logger
+        self.visualization = visualization
         self.model = model
         self.train_loader = train_loader
         self.test_loader = test_loader
@@ -33,7 +34,8 @@ class REPruningMCGDTopKACDKADMMIntra:
         self.use_cuda = not config.get('OTHER', 'no_cuda', bool) and torch.cuda.is_available()
         self.kwargs = {'num_workers': 1, 'pin_memory': True} if self.use_cuda else {}
         self.device = torch.device("cuda" if self.use_cuda else "cpu")
-        self.performance_model = PerformanceModel(model, train_loader, config, overhead_gd_top_k_mc=True, overhead_re_pruning=True)
+        self.performance_model = PerformanceModel(model, train_loader, config,
+                                                  overhead_gd_top_k_mc=True, overhead_re_pruning=True, logger=logger)
         self.gradient_diversity = MonteCarloGDTopKGradients(config.get('SPECIFICATION', 'lb', int),
                                                             config.get('SPECIFICATION', 'k', int),
                                                             config.get('SPECIFICATION', 'se', int), model)
@@ -63,7 +65,6 @@ class REPruningMCGDTopKACDKADMMIntra:
         self.k = config.get('SPECIFICATION', 'k', int)
         self.k_max = config.get('SPECIFICATION', 'k', int)
         self.accum_steps_log = []
-
         self.global_epochs = 0
 
     def dispatch(self):
@@ -78,6 +79,10 @@ class REPruningMCGDTopKACDKADMMIntra:
             self.__test(self.config, self.model, self.device, self.test_loader)
             self.__retrain(self.config, self.model, mask, self.device, self.train_loader, self.test_loader, optimizer)
             print(self.performance_model.flops_accumulated, self.performance_model.flops_accumulated_base, flush=True)
+        self.logger.store()
+        if self.config.get('OTHER', 'vis_model', bool): self.visualization.visualize_model(self.model)
+        if self.config.get('OTHER', 'save_model', bool): torch.save(self.model.state_dict(),
+                                                                    self.config.get('OTHER', 'out_path', str))
 
     def __train(self, config, model, device, train_loader, test_loader, optimizer):
         for epoch in range(config.get('SPECIFICATION', 'pre_epochs', int)):
@@ -134,6 +139,8 @@ class REPruningMCGDTopKACDKADMMIntra:
                 self.performance_model.eval(model, self.ac)
                 if (batch_idx + 1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
                     self.performance_model.print_perf_stats()
+                self.performance_model.log_perf_stats()
+                self.performance_model.log_layer_sparsity(self.model)
                 if (batch_idx + 1) % int(self.ac) == 0 or (batch_idx + 1) % len(train_loader) == 0:
                     optimizer.step()
                     optimizer.zero_grad()
@@ -195,6 +202,8 @@ class REPruningMCGDTopKACDKADMMIntra:
                 self.performance_model.eval(model, self.ac)
                 if (batch_idx + 1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
                     self.performance_model.print_perf_stats()
+                self.performance_model.log_perf_stats()
+                self.performance_model.log_layer_sparsity(self.model)
                 if (batch_idx + 1) % int(self.ac) == 0 or (batch_idx + 1) % len(train_loader) == 0:
                     optimizer.step()
                     optimizer.zero_grad()
@@ -279,6 +288,8 @@ class REPruningMCGDTopKACDKADMMIntra:
                 self.performance_model.eval(model, self.ac)
                 if (batch_idx + 1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
                     self.performance_model.print_perf_stats()
+                self.performance_model.log_perf_stats()
+                self.performance_model.log_layer_sparsity(self.model)
                 if (batch_idx + 1) % int(self.ac) == 0 or (batch_idx + 1) % len(train_loader) == 0:
                     optimizer.prune_step(mask)
                     optimizer.zero_grad()

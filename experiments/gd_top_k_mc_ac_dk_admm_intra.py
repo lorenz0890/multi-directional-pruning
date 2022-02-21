@@ -14,7 +14,7 @@ from tqdm import tqdm
 import random
 
 class MCGDTopKACDKADMMIntra:
-    def __init__(self, model, train_loader, test_loader, config, logger):
+    def __init__(self, model, train_loader, test_loader, config, logger, visualization=None):
         self.model = model
         self.train_loader = train_loader
         self.test_loader = test_loader
@@ -22,7 +22,8 @@ class MCGDTopKACDKADMMIntra:
         self.use_cuda = not config.get('OTHER', 'no_cuda', bool) and torch.cuda.is_available()
         self.kwargs = {'num_workers': 1, 'pin_memory': True} if self.use_cuda else {}
         self.device = torch.device("cuda" if self.use_cuda else "cpu")
-
+        self.logger = logger
+        self.visualization = visualization
         self.model = model
         self.train_loader = train_loader
         self.test_loader = test_loader
@@ -30,7 +31,7 @@ class MCGDTopKACDKADMMIntra:
         self.use_cuda = not config.get('OTHER', 'no_cuda', bool) and torch.cuda.is_available()
         self.kwargs = {'num_workers': 1, 'pin_memory': True} if self.use_cuda else {}
         self.device = torch.device("cuda" if self.use_cuda else "cpu")
-        self.performance_model = PerformanceModel(model, train_loader, config, overhead_gd_top_k_mc=True)
+        self.performance_model = PerformanceModel(model, train_loader, config, overhead_gd_top_k_mc=True, logger=logger)
         self.gradient_diversity = MonteCarloGDTopKGradients(config.get('SPECIFICATION', 'lb', int),
                                                             config.get('SPECIFICATION', 'k', int),
                                                             config.get('SPECIFICATION', 'se', int), model)
@@ -58,6 +59,11 @@ class MCGDTopKACDKADMMIntra:
             self.__test(self.config, self.model, self.device, self.test_loader)
             self.__retrain(self.config, self.model, mask, self.device, self.train_loader, self.test_loader, optimizer)
             print(self.performance_model.flops_accumulated, self.performance_model.flops_accumulated_base, flush=True)
+
+        self.logger.store()
+        if self.config.get('OTHER', 'vis_model', bool): self.visualization.visualize_model(self.model)
+        if self.config.get('OTHER', 'save_model', bool): torch.save(self.model.state_dict(),
+                                                                    self.config.get('OTHER', 'out_path', str))
 
     def __train(self, config, model, device, train_loader, test_loader, optimizer):
         for epoch in range(config.get('SPECIFICATION', 'pre_epochs', int)):

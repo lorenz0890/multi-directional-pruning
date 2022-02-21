@@ -20,7 +20,7 @@ from tqdm import tqdm
 
 
 class Baseline:
-    def __init__(self, model, train_loader, test_loader, config, logger):
+    def __init__(self, model, train_loader, test_loader, config, logger, visualization=None):
         self.model = model
         self.train_loader = train_loader
         self.test_loader = test_loader
@@ -30,6 +30,7 @@ class Baseline:
         self.device = torch.device("cuda" if self.use_cuda else "cpu")
         self.gradient_diversity = GradientDiversityTopKGradients(1, 1)  # Only required for gradient normalization
         self.logger = logger
+        self.visualization = visualization
         self.optimizer = SGD(self.model.parameters(), lr=self.config.get('SPECIFICATION', 'lr', float), weight_decay=0.0)
         self.scheduler = MultiStepLR(self.optimizer, milestones=self.config.get('SPECIFICATION', 'steps',
                                                                            lambda a: [int(b) for b in str(a).split(',')]),
@@ -40,6 +41,9 @@ class Baseline:
         self.__train()
         self.__test()
         self.logger.store()
+        if self.config.get('OTHER', 'vis_model', bool): self.visualization.visualize_model(self.model)
+        if self.config.get('OTHER', 'save_model', bool): torch.save(self.model.state_dict(),
+                                                                    self.config.get('OTHER', 'out_path', str))
 
     def __train(self):
         for epoch in range(self.config.get('SPECIFICATION', 'epochs', int)):

@@ -12,7 +12,7 @@ from torchvision import datasets, transforms
 from tqdm import tqdm
 
 class ADMMIntra:
-    def __init__(self, model, train_loader, test_loader, config, logger):
+    def __init__(self, model, train_loader, test_loader, config, logger, visualization):
         self.model = model
         self.train_loader = train_loader
         self.test_loader = test_loader
@@ -20,7 +20,9 @@ class ADMMIntra:
         self.use_cuda = not config.get('OTHER', 'no_cuda', bool) and torch.cuda.is_available()
         self.kwargs = {'num_workers': 1, 'pin_memory': True} if self.use_cuda else {}
         self.device = torch.device("cuda" if self.use_cuda else "cpu")
-        self.performance_model = PerformanceModel(model, train_loader, config)
+        self.logger = logger
+        self.visualization = visualization
+        self.performance_model = PerformanceModel(model, train_loader, config, logger=logger)
 
     def dispatch(self):
         torch.manual_seed(self.config.get('OTHER', 'seed', int))
@@ -34,7 +36,10 @@ class ADMMIntra:
             self.__test(self.config, self.model, self.device, self.test_loader)
             self.__retrain(self.config, self.model, mask, self.device, self.train_loader, self.test_loader, optimizer)
             print(self.performance_model.flops_accumulated, self.performance_model.flops_accumulated_base, flush=True)
-
+        self.logger.store()
+        if self.config.get('OTHER', 'vis_model', bool): self.visualization.visualize_model(self.model)
+        if self.config.get('OTHER', 'save_model', bool): torch.save(self.model.state_dict(),
+                                                                    self.config.get('OTHER', 'out_path', str))
 
     def __train(self, config, model, device, train_loader, test_loader, optimizer):
         for epoch in range(config.get('SPECIFICATION', 'pre_epochs', int)):
@@ -49,6 +54,8 @@ class ADMMIntra:
                 self.performance_model.eval(model, 1)
                 if (batch_idx + 1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
                     self.performance_model.print_perf_stats()
+                self.performance_model.log_perf_stats()
+                self.performance_model.log_layer_sparsity(self.model)
                 optimizer.step()
 
             self.__test(config, model, device, test_loader)
@@ -66,6 +73,8 @@ class ADMMIntra:
                 self.performance_model.eval(model, 1)
                 if (batch_idx + 1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
                     self.performance_model.print_perf_stats()
+                self.performance_model.log_perf_stats()
+                self.performance_model.log_layer_sparsity(self.model)
                 optimizer.step()
 
             X = update_X(model)
@@ -107,6 +116,8 @@ class ADMMIntra:
                 self.performance_model.eval(model, 1)
                 if (batch_idx + 1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
                     self.performance_model.print_perf_stats()
+                self.performance_model.log_perf_stats()
+                self.performance_model.log_layer_sparsity(self.model)
                 optimizer.prune_step(mask)
 
             self.__test(config, model, device, test_loader)

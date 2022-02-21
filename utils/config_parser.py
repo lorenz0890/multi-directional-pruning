@@ -1,4 +1,6 @@
 import configparser
+from distutils.util import strtobool
+
 
 class Parser:
     def __init__(self):
@@ -14,7 +16,11 @@ class Parser:
 
     def get(self, section, key, dtype):
         if self.loaded:
-            return dtype(self.config[section][key])
+            if dtype != bool or key == 'no_cuda': # TODO Workaround, permanent fix required
+                return dtype(self.config[section][key])
+            elif dtype == bool:
+                return bool(strtobool(self.config[section][key]))
+
         else:
             raise Exception('No config loaded')
 
