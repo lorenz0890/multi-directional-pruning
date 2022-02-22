@@ -81,7 +81,9 @@ class REPruningMCGDTopKACDKADMMIntra:
             print(self.performance_model.flops_accumulated, self.performance_model.flops_accumulated_base, flush=True)
         self.logger.store()
         if self.config.get('OTHER', 'vis_model', bool): self.visualization.visualize_model(self.model)
-        if self.config.get('OTHER', 'vis_log', bool): self.visualization.visualize_perfstats(self.logger)
+        if self.config.get('OTHER', 'vis_log', bool):
+            self.visualization.visualize_perfstats(self.logger)
+            self.visualization.visualize_key_list(self.logger, ['test_accuracy', 'test_loss', 'train_loss'])
         if self.config.get('OTHER', 'save_model', bool): torch.save(self.model.state_dict(),
                                                                     self.config.get('OTHER', 'out_path', str))
 
@@ -142,6 +144,7 @@ class REPruningMCGDTopKACDKADMMIntra:
                     self.performance_model.print_perf_stats()
                 self.performance_model.log_perf_stats()
                 self.performance_model.log_layer_sparsity(self.model)
+                self.logger.log('train_loss', loss.item())
                 if (batch_idx + 1) % int(self.ac) == 0 or (batch_idx + 1) % len(train_loader) == 0:
                     optimizer.step()
                     optimizer.zero_grad()
@@ -205,6 +208,7 @@ class REPruningMCGDTopKACDKADMMIntra:
                     self.performance_model.print_perf_stats()
                 self.performance_model.log_perf_stats()
                 self.performance_model.log_layer_sparsity(self.model)
+                self.logger.log('train_loss', loss.item())
                 if (batch_idx + 1) % int(self.ac) == 0 or (batch_idx + 1) % len(train_loader) == 0:
                     optimizer.step()
                     optimizer.zero_grad()
@@ -229,7 +233,8 @@ class REPruningMCGDTopKACDKADMMIntra:
                 correct += pred.eq(target.view_as(pred)).sum().item()
 
         test_loss /= len(test_loader.dataset)
-
+        self.logger.log('test_loss', test_loss)
+        self.logger.log('test_accuracy', correct / len(self.test_loader.dataset))
         print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
             test_loss, correct, len(test_loader.dataset),
             100. * correct / len(test_loader.dataset)))
@@ -291,6 +296,7 @@ class REPruningMCGDTopKACDKADMMIntra:
                     self.performance_model.print_perf_stats()
                 self.performance_model.log_perf_stats()
                 self.performance_model.log_layer_sparsity(self.model)
+                self.logger.log('train_loss', loss.item())
                 if (batch_idx + 1) % int(self.ac) == 0 or (batch_idx + 1) % len(train_loader) == 0:
                     optimizer.prune_step(mask)
                     optimizer.zero_grad()

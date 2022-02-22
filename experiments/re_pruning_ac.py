@@ -22,7 +22,7 @@ from tqdm import tqdm
 from utils.visualization import Visualization
 
 
-class REPruning:
+class REPruningAC:
     def __init__(self, model, train_loader, test_loader, config, logger, visualization=None):
         self.model = model
         self.train_loader = train_loader
@@ -35,7 +35,6 @@ class REPruning:
         self.visualization = visualization
         self.performance_model = PerformanceModel(model, train_loader, config, overhead_re_pruning=True, logger=logger)
         self.gradient_diversity = GradientDiversity(config.get('SPECIFICATION', 'lb', int)) #Only required for G Norm & Accum functionality
-
         self.conv_pruning = RePruningConvDet(self.config.get('SPECIFICATION', 'softness_c', float),
                                              self.config.get('SPECIFICATION', 'magnitude_t_c', float),
                                              self.config.get('SPECIFICATION', 'metric_q_c', float),
@@ -57,6 +56,10 @@ class REPruning:
                                                                                 lambda a: [int(b) for b in
                                                                                            str(a).split(',')]),
                                                                                 gamma=config.get('SPECIFICATION', 'gamma', float))
+        self.loss_log = []
+        self.loss_m_log = []
+        self.loss_ratio_log = []
+        self.ac = config.get('SPECIFICATION', 'ac', int)
 
 
         # TODO add overhead w/o mask application to performance model
@@ -79,7 +82,7 @@ class REPruning:
         if self.config.get('OTHER', 'vis_model', bool): self.visualization.visualize_model(self.model)
         if self.config.get('OTHER', 'vis_log', bool):
             self.visualization.visualize_perfstats(self.logger)
-            self.visualization.visualize_key_list(self.logger, ['test_accuracy', 'test_loss', 'train_loss'])
+            self.visualization.visualize_key_list(self.logger, ['accumulation', 'test_accuracy', 'test_loss', 'train_loss'])
         if self.config.get('OTHER', 'save_model', bool): torch.save(self.model.state_dict(), self.config.get('OTHER', 'out_path', str))
 
     def __train(self):
@@ -88,7 +91,6 @@ class REPruning:
             self.model.train()
             for batch_idx, (data, target) in enumerate(tqdm(self.train_loader)):
                 data, target = data.to(self.device), target.to(self.device)
-                self.optimizer.zero_grad()
                 output = self.model(data)
 
                 loss = F.nll_loss(output, target, reduction='sum')
@@ -96,6 +98,7 @@ class REPruning:
                     l1 = sum(p.abs().sum() for p in self.model.parameters())
                     l2 = sum(p.norm() for p in self.model.parameters())
                     loss += self.config.get('SPECIFICATION', 'l1', float) * l1 +self. config.get('SPECIFICATION', 'l1', float) * l2
+                loss = loss / self.ac
                 loss.backward()
 
                 self.gradient_diversity.norm_grads(self.model)
@@ -112,13 +115,28 @@ class REPruning:
                     self.conv_pruning.apply_threshold(self.model)
                     self.linear_pruning.apply_threshold(self.model)
 
-                self.performance_model.eval(self.model, 1)
+                self.loss_log.append(loss.item())
+                loss_m = sum(self.loss_log[-self.config.get('SPECIFICATION', 'lb', int):]) / len(
+                    self.loss_log[-self.config.get('SPECIFICATION', 'lb', int):])
+                self.loss_m_log.append(loss_m)
+                self.loss_ratio_log.append(self.loss_log[-1] / loss_m)
+                if self.loss_log[-1] > loss_m:
+                    self.ac = max(1, self.ac * 0.9)
+                else:
+                    self.ac = min(
+                        self.config.get('SPECIFICATION', 'lb', int) - batch_idx % self.config.get('SPECIFICATION', 'lb', int),
+                        self.ac * 1.1)
+                self.logger.log('accumulation', self.ac)
+
+                self.performance_model.eval(self.model, self.ac)
                 if (batch_idx+1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
                     self.performance_model.print_perf_stats()
                 self.performance_model.log_perf_stats()
                 self.performance_model.log_layer_sparsity(self.model)
                 self.logger.log('train_loss', loss.item())
-                self.optimizer.step()
+                if (batch_idx + 1) % int(self.ac) == 0 or (batch_idx + 1) % len(self.train_loader) == 0:
+                    self.optimizer.step()
+                    self.optimizer.zero_grad()
 
             self.__test()
             self.scheduler.step()

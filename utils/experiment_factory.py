@@ -2,11 +2,11 @@ from torchvision import datasets, transforms
 import torch
 
 from experiments import ADMMRetrain, ADMMIntra, GDTopK, MCGDTopK, MCGDTopKACDK, MCGDTopKAC, Baseline, \
-    MCGDTopKACDKADMMIntra, REPruningMCGDTopKACDKADMMIntra
+    MCGDTopKACDKADMMIntra, REPruningMCGDTopKACDKADMMIntra, REPruningAC
 from experiments import REPruning
 from utils import DataFactory, ModelFactory
 from utils import Logger
-from utils.vis import Visualization
+from utils.visualization import Visualization
 
 
 class ExperimentFactory:
@@ -33,6 +33,8 @@ class ExperimentFactory:
             experiment = MCGDTopKACDK(model, train_loader, test_loader, config, logger, visualization)
         if config.get('EXPERIMENT', 'name', str) == 're_pruning':
             experiment = REPruning(model, train_loader, test_loader, config, logger, visualization)
+        if config.get('EXPERIMENT', 'name', str) == 're_pruning_ac':
+            experiment = REPruningAC(model, train_loader, test_loader, config, logger, visualization)
         if config.get('EXPERIMENT', 'name', str) == 'baseline':
             experiment = Baseline(model, train_loader, test_loader, config, logger, visualization)
         if config.get('EXPERIMENT', 'name', str) == 'gd_top_k_mc_ac_dk_admm_intra':

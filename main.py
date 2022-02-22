@@ -47,15 +47,13 @@ def main():
 
     #config.load('configs/ablation_study/re_pruning/lenet_mnist.ini')
     #config.load('configs/ablation_study/re_pruning/alexnet_cifar10.ini')
-    #config.load('configs/ablation_study/re_pruning/mobilenet_v3_s_cifar10.ini')
-    #config.load('configs/ablation_study/re_pruning/vgg11_cifar10.ini')
-    #config.load('configs/ablation_study/re_pruning/vgg16_cifar10_2.ini')
-    #config.load('configs/ablation_study/re_pruning/resnet18_cifar10.ini')
+
+    config.load('configs/ablation_study/re_pruning_ac/lenet_mnist.ini')
 
     #config.load('configs/baseline/vgg8_cifar10.ini')
     #config.load('configs/baseline/vgg8_bn_cifar10.ini')
     #config.load('configs/baseline/wrn16_8_cifar10.ini')
-    config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/lenet_mnist.ini')
+    #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/lenet_mnist.ini')
     #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/alexnet_cifar10.ini')
 
     experiment = experiment_factory.get_experiment(config)

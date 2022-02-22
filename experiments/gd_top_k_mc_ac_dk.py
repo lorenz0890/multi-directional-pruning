@@ -52,7 +52,9 @@ class MCGDTopKACDK:
 
         self.logger.store()
         if self.config.get('OTHER', 'vis_model', bool): self.visualization.visualize_model(self.model)
-        if self.config.get('OTHER', 'vis_log', bool): self.visualization.visualize_perfstats(self.logger)
+        if self.config.get('OTHER', 'vis_log', bool):
+            self.visualization.visualize_perfstats(self.logger)
+            self.visualization.visualize_key_list(self.logger, ['test_accuracy', 'test_loss', 'train_loss'])
         if self.config.get('OTHER', 'save_model', bool): torch.save(self.model.state_dict(),
                                                                     self.config.get('OTHER', 'out_path', str))
     def __train(self, config, model, device, train_loader, test_loader, optimizer):
@@ -67,7 +69,7 @@ class MCGDTopKACDK:
                 l1 = sum(p.abs().sum() for p in self.model.parameters())
                 l2 = sum(p.norm() for p in self.model.parameters())
                 loss += self.config.get('SPECIFICATION', 'l1', float) * l1 + self.config.get('SPECIFICATION', 'l1',float) * l2
-                loss = loss / config.get('SPECIFICATION', 'ac', int)
+                loss = loss / self.ac
                 loss.backward()
                 self.gradient_diversity.norm_grads(model)
                 self.gradient_diversity.update_epoch(epoch)
@@ -89,7 +91,6 @@ class MCGDTopKACDK:
                     self.ac = min(config.get('SPECIFICATION', 'lb', int) - batch_idx % config.get('SPECIFICATION', 'lb', int), self.ac *1.1)
                 else:
                     self.k_batch_map[batch_idx].append(self.k)
-                self.accum_steps_log.append(self.ac)
                 self.k = random.choice(self.k_batch_map[batch_idx][-config.get('SPECIFICATION', 'lb', int):])
                 self.k_log.append(self.k)
 
@@ -102,12 +103,11 @@ class MCGDTopKACDK:
                     self.performance_model.print_perf_stats()
                 self.performance_model.log_perf_stats()
                 self.performance_model.log_layer_sparsity(self.model)
-
+                self.logger.log('train_loss', loss.item())
                 #print(batch_idx+1, self.ac)
                 if (batch_idx+1) % int(self.ac) == 0 or (batch_idx+1) % len(train_loader) == 0:
                     optimizer.step()
                     optimizer.zero_grad(set_to_none=True)
-
 
             self.__test(config, model, device, test_loader)
 
@@ -124,7 +124,8 @@ class MCGDTopKACDK:
                 correct += pred.eq(target.view_as(pred)).sum().item()
 
         test_loss /= len(test_loader.dataset)
-
+        self.logger.log('test_loss', test_loss)
+        self.logger.log('test_accuracy', correct / len(self.test_loader.dataset))
         print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
             test_loss, correct, len(test_loader.dataset),
             100. * correct / len(test_loader.dataset)))
