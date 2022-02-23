@@ -6,13 +6,14 @@ from thop import profile
 
 class PerformanceModel:
     def __init__(self, model, train_loader, config, overhead_gd_top_k=False,
-                 overhead_gd_top_k_mc=False, overhead_re_pruning=False, logger = None):
+                 overhead_gd_top_k_mc=False, overhead_re_pruning=False, overhead_admm=True, logger = None):
 
         self.config = config
         self.logger = logger
         self.est_oh_gd_top_k = overhead_gd_top_k
         self.est_oh_gd_top_k_mc = overhead_gd_top_k_mc
         self.est_oh_re_pruning = overhead_re_pruning
+        self.est_oh_admm = overhead_admm
 
         in_shape = next(enumerate(train_loader))[1][0].shape
         self.macs = profile(model,
@@ -131,7 +132,7 @@ class PerformanceModel:
 
     def __estimate_overhead(self, model):
         #Assumptions: regularized baseline with gradient normalzation
-        oh_grad_accumulation, oh_re_pruning, oh_gd_top_k, oh_gd_top_k_mc = 0, 0, 0, 0
+        oh_grad_accumulation, oh_re_pruning, oh_gd_top_k, oh_gd_top_k_mc, oh_admm= 0, 0, 0, 0, 0
         if self.est_oh_re_pruning or self.est_oh_gd_top_k or self.est_oh_gd_top_k_mc:
             oh_grad_accumulation = self.__estimate_overhead_grad_accumulation(model).item()
         if self.est_oh_gd_top_k:
@@ -142,7 +143,10 @@ class PerformanceModel:
             oh_re_pruning += self.__estimate_overhead_mask_application(model)
         if self.est_oh_gd_top_k_mc:
             oh_gd_top_k_mc = self.__estimate_overhead_gd_top_k(model).item()
-        return (oh_gd_top_k_mc + oh_gd_top_k + oh_re_pruning + oh_grad_accumulation)* 1e-9 #GFLOPs
+        if self.est_oh_admm:
+            oh_admm = self.__estimate_overhead_admm(model).item()
+
+        return (oh_gd_top_k_mc + oh_gd_top_k + oh_re_pruning + oh_grad_accumulation + oh_admm)* 1e-9 #GFLOPs
 
 
 

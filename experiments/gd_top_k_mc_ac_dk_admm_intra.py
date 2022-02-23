@@ -31,7 +31,7 @@ class MCGDTopKACDKADMMIntra:
         self.use_cuda = not config.get('OTHER', 'no_cuda', bool) and torch.cuda.is_available()
         self.kwargs = {'num_workers': 1, 'pin_memory': True} if self.use_cuda else {}
         self.device = torch.device("cuda" if self.use_cuda else "cpu")
-        self.performance_model = PerformanceModel(model, train_loader, config, overhead_gd_top_k_mc=True, logger=logger)
+        self.performance_model = PerformanceModel(model, train_loader, config, overhead_gd_top_k_mc=True, overhead_admm=True, logger=logger)
         self.gradient_diversity = MonteCarloGDTopKGradients(config.get('SPECIFICATION', 'lb', int),
                                                             config.get('SPECIFICATION', 'k', int),
                                                             config.get('SPECIFICATION', 'se', int), model)
@@ -107,9 +107,11 @@ class MCGDTopKACDKADMMIntra:
                 self.gradient_diversity.select_delete_grads(batch_idx, self.global_epochs)
                 self.gradient_diversity.delete_selected_grads(model)
                 self.performance_model.eval(model, self.ac)
-                self.logger.log('train_loss', loss.item())
                 if (batch_idx + 1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
                     self.performance_model.print_perf_stats()
+                self.performance_model.log_perf_stats()
+                self.performance_model.log_layer_sparsity(self.model)
+                self.logger.log('train_loss', loss.item())
                 if (batch_idx + 1) % int(self.ac) == 0 or (batch_idx + 1) % len(train_loader) == 0:
                     optimizer.step()
                     optimizer.zero_grad()
@@ -157,10 +159,11 @@ class MCGDTopKACDKADMMIntra:
                 self.gradient_diversity.select_delete_grads(batch_idx, self.global_epochs)
                 self.gradient_diversity.delete_selected_grads(model)
                 self.performance_model.eval(model, self.ac)
-                self.logger.log('train_loss', loss.item())
-
                 if (batch_idx + 1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
                     self.performance_model.print_perf_stats()
+                self.performance_model.log_perf_stats()
+                self.performance_model.log_layer_sparsity(self.model)
+                self.logger.log('train_loss', loss.item())
                 if (batch_idx + 1) % int(self.ac) == 0 or (batch_idx + 1) % len(train_loader) == 0:
                     optimizer.step()
                     optimizer.zero_grad()
@@ -233,10 +236,11 @@ class MCGDTopKACDKADMMIntra:
                 self.gradient_diversity.select_delete_grads(batch_idx, self.global_epochs)
                 self.gradient_diversity.delete_selected_grads(model)
                 self.performance_model.eval(model, self.ac)
-                self.logger.log('train_loss', loss.item())
-
                 if (batch_idx + 1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
                     self.performance_model.print_perf_stats()
+                self.performance_model.log_perf_stats()
+                self.performance_model.log_layer_sparsity(self.model)
+                self.logger.log('train_loss', loss.item())
                 if (batch_idx + 1) % int(self.ac) == 0 or (batch_idx + 1) % len(train_loader) == 0:
                     optimizer.prune_step(mask)
                     optimizer.zero_grad()
