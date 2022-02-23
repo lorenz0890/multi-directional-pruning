@@ -49,7 +49,7 @@ class MCGDTopKAC:
         if self.config.get('OTHER', 'vis_model', bool): self.visualization.visualize_model(self.model)
         if self.config.get('OTHER', 'vis_log', bool):
             self.visualization.visualize_perfstats(self.logger)
-            self.visualization.visualize_key_list(self.logger, ['test_accuracy', 'test_loss', 'train_loss'])
+            self.visualization.visualize_key_list(self.logger, ['accumulation', 'test_accuracy', 'test_loss', 'train_loss'])
         if self.config.get('OTHER', 'save_model', bool): torch.save(self.model.state_dict(),
                                                                     self.config.get('OTHER', 'out_path', str))
 
@@ -79,7 +79,7 @@ class MCGDTopKAC:
                     self.ac = max(1, self.ac * 0.9)
                 else:
                     self.ac = min(config.get('SPECIFICATION', 'lb', int) - batch_idx % config.get('SPECIFICATION', 'lb', int), self.ac *1.1)
-                self.accum_steps_log.append(self.ac)
+                self.logger.log('accumulation', self.ac)
                 
                 self.gradient_diversity.select_delete_grads(batch_idx, epoch)
                 self.gradient_diversity.delete_selected_grads(model)

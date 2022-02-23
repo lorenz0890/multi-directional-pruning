@@ -35,10 +35,8 @@ class MCGDTopKACDK:
         self.loss_m_log = []
         self.loss_ratio_log = []
         self.k_batch_map = {}
-        self.k_log = []
         self.k = config.get('SPECIFICATION', 'k', int)
         self.k_max = config.get('SPECIFICATION', 'k', int)
-        self.accum_steps_log = []
 
     def dispatch(self):
         torch.manual_seed(self.config.get('OTHER', 'seed', int))
@@ -54,7 +52,7 @@ class MCGDTopKACDK:
         if self.config.get('OTHER', 'vis_model', bool): self.visualization.visualize_model(self.model)
         if self.config.get('OTHER', 'vis_log', bool):
             self.visualization.visualize_perfstats(self.logger)
-            self.visualization.visualize_key_list(self.logger, ['test_accuracy', 'test_loss', 'train_loss'])
+            self.visualization.visualize_key_list(self.logger, ['top_k', 'accumulation', 'test_accuracy', 'test_loss', 'train_loss'])
         if self.config.get('OTHER', 'save_model', bool): torch.save(self.model.state_dict(),
                                                                     self.config.get('OTHER', 'out_path', str))
     def __train(self, config, model, device, train_loader, test_loader, optimizer):
@@ -91,8 +89,9 @@ class MCGDTopKACDK:
                     self.ac = min(config.get('SPECIFICATION', 'lb', int) - batch_idx % config.get('SPECIFICATION', 'lb', int), self.ac *1.1)
                 else:
                     self.k_batch_map[batch_idx].append(self.k)
+                self.logger.log('accumulation', self.ac)
                 self.k = random.choice(self.k_batch_map[batch_idx][-config.get('SPECIFICATION', 'lb', int):])
-                self.k_log.append(self.k)
+                self.logger.log('top_k', self.k)
 
                 self.gradient_diversity.update_k(self.k)
                 self.gradient_diversity.select_delete_grads(batch_idx, epoch)
