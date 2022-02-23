@@ -5,10 +5,22 @@ from distutils.util import strtobool
 class Parser:
     def __init__(self):
         self.config = configparser.ConfigParser()
+        self.config_global = configparser.ConfigParser()
         self.loaded = False
 
+    def __config_global_override(self):
+        for section in self.config_global:
+            if section in self.config:
+                for key in self.config_global[section]:
+                    if key in self.config[section]:
+                        self.config[section][key] = self.config_global[section][key]
+
     def load(self, path):
+        self.config_global.read('configs/global_override.ini')
         self.config.read(path)
+
+
+
         self.loaded = True
 
     def get_raw(self):

@@ -87,8 +87,8 @@ class RePruningConvDet(RePruning):
                 if p.grad is not None and not 'bias' in n and ('conv' in n or 'features' in n):
                     if n in self.masks:
                         p.data = p.data * (self.masks[n] + (torch.ones_like(p.data) - self.masks[n]) * self.strength)
-                        if p.data.grad is not None:
-                            p.data.grad = p.data.grad * self.masks[n]#(self.masks[n] + (torch.ones_like(p.data) - self.masks[n]) * self.strength)
+                        if p.grad.data is not None:
+                            p.grad.data = p.grad.data * self.masks[n]#(self.masks[n] + (torch.ones_like(p.data) - self.masks[n]) * self.strength)
 
     def apply_threshold(self, model):
         with torch.no_grad():

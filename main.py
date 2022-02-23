@@ -45,7 +45,7 @@ def main():
     #config.load('configs/gd_top_k_mc_ac_dk_admm_intra/lenet_mnist.ini')
     #config.load('configs/gd_top_k_mc_ac_dk_admm_intra/alexnet_cifar10.ini')
 
-    #config.load('configs/ablation_study/re_pruning/lenet_mnist.ini')
+    config.load('configs/ablation_study/re_pruning/excluded/lenet_mnist.ini')
     #config.load('configs/ablation_study/re_pruning/alexnet_cifar10.ini')
 
     #config.load('configs/ablation_study/re_pruning_ac/lenet_mnist.ini')
@@ -55,7 +55,7 @@ def main():
     #config.load('configs/baseline/wrn16_8_cifar10.ini')
     #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/lenet_mnist.ini')
     #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/alexnet_cifar10.ini')
-    '''
+
     experiment = experiment_factory.get_experiment(config)
     experiment.dispatch()
 
@@ -76,6 +76,6 @@ def main():
             enablePrint()
             print(e, flush=True)
             blockPrint()
-
+    '''
 if __name__ == "__main__":
     main()
