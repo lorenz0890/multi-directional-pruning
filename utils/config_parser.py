@@ -9,18 +9,20 @@ class Parser:
         self.loaded = False
 
     def __config_global_override(self):
+        print(self.config_global, flush=True)
         for section in self.config_global:
             if section in self.config:
                 for key in self.config_global[section]:
                     if key in self.config[section]:
                         self.config[section][key] = self.config_global[section][key]
+                        print(self.config[section][key])
+                        print('Override: config[{}][{}] = {}'.format(
+                            section, key, self.config_global[section][key]), flush=True)
 
     def load(self, path):
         self.config_global.read('configs/global_override.ini')
         self.config.read(path)
-
-
-
+        self.__config_global_override()
         self.loaded = True
 
     def get_raw(self):
