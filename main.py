@@ -48,7 +48,7 @@ def main():
     #config.load('configs/ablation_study/re_pruning/excluded/lenet_mnist.ini')
     #config.load('configs/ablation_study/re_pruning/alexnet_cifar10.ini')
 
-    #config.load('configs/ablation_study/re_pruning_ac/lenet_mnist_1.ini')
+    #config.load('configs/ablation_study/re_pruning_ac/finished/lenet_mnist_1.ini')
 
     #config.load('configs/baseline/vgg8_cifar10.ini')
     #config.load('configs/baseline/vgg8_bn_cifar10.ini')
@@ -61,22 +61,23 @@ def main():
 
 
     #Batch mode
+    paths = ['configs/ablation_study/gd_top_k_mc_ac_dk/',
+            'configs/baseline/']
 
-    path = 'configs/ablation_study/gd_top_k_mc_ac_dk/'
-    #path = 'configs/baseline/'
-    fnames = [f for f in listdir(path) if isfile(join(path, f))]
-    for fname in fnames:
-        try:
-            enablePrint()
-            print(fname, flush=True)
-            blockPrint()
-            config.load(path+fname)
-            experiment = experiment_factory.get_experiment(config)
-            experiment.dispatch()
-        except Exception as e:
-            enablePrint()
-            print(e, flush=True)
-            blockPrint()
+    for path in paths:
+        fnames = [f for f in listdir(path) if isfile(join(path, f))]
+        for fname in fnames:
+            try:
+                enablePrint()
+                print(fname, flush=True)
+                blockPrint()
+                config.load(path+fname)
+                experiment = experiment_factory.get_experiment(config)
+                experiment.dispatch()
+            except Exception as e:
+                enablePrint()
+                print(e, flush=True)
+                blockPrint()
 
 if __name__ == "__main__":
     main()

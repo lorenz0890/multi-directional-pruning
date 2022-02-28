@@ -22,8 +22,11 @@ class Parser:
     def load(self, path):
         self.config_global.read('configs/global_override.ini')
         self.config.read(path)
+        print('Pre-Path', self.config['OTHER']['out_path'], flush=True)
         self.__config_global_override()
+        print('Post-Path', self.config['OTHER']['out_path'], flush=True)
         self.loaded = True
+        print(self.get('OTHER', 'out_path', str), flush=True)
 
     def get_raw(self):
         return {s:dict(self.config.items(s)) for s in self.config.sections()}

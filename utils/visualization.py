@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 
 import numpy as np
@@ -9,11 +10,14 @@ sns.set()
 from matplotlib import pyplot as plt
 
 class Visualization:
-    def __init__(self, config, path='/media/lorenz/Volume/code/msc/pytorch-admm-pruning/logfiles/'):
+    def __init__(self, config, path = None):
         self.path = path
         self.logdict = {}
         self.config = config
         self.active = True
+
+        if self.path is None or self.path == 'Default':
+            self.path = os.getcwd()+'/logfiles/'
 
     def __make_name(self, tag=None):
         name = ''

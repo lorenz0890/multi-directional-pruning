@@ -1,16 +1,20 @@
 import json
+import os
 from datetime import datetime
 
 import torch
 
 
 class Logger:
-    def __init__(self, config, path = '/media/lorenz/Volume/code/msc/pytorch-admm-pruning/logfiles/'):
+    def __init__(self, config, path = None):
         self.path = path
         self.logdict = {}
         self.config = config
         self.logdict['LOGDATA'] = {}
         self.active = True
+
+        if self.path is None or self.path == 'Default':
+            self.path = os.getcwd()+'/logfiles/'
 
     def toggle(self): #no logging for debugging
         self.active = not self.active
