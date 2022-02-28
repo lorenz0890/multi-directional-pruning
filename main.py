@@ -61,8 +61,10 @@ def main():
 
 
     #Batch mode
-    paths = ['configs/ablation_study/gd_top_k_mc_ac_dk/',
-            'configs/baseline/']
+    paths = [
+            'configs/experiments/gd_top_k_mc_ac_dk/',
+            'configs/experiments/baseline/'
+    ]
 
     for path in paths:
         fnames = [f for f in listdir(path) if isfile(join(path, f))]
