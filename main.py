@@ -3,7 +3,7 @@ from utils import Parser
 from utils import ExperimentFactory
 from os import listdir
 from os.path import isfile, join
-
+import timeit
 
 from tqdm import tqdm
 from functools import partialmethod
@@ -45,7 +45,7 @@ def main():
     #config.load('configs/ablation_study/gd_top_k_mc_ac_dk_admm_intra/lenet_mnist_1.ini')
     #config.load('configs/gd_top_k_mc_ac_dk_admm_intra/alexnet_cifar10.ini')
 
-    #config.load('configs/ablation_study/re_pruning/excluded/lenet_mnist.ini')
+    #config.load('configs/ablation_study/re_pruning/excluded/lenet_mnist_1.ini')
     #config.load('configs/ablation_study/re_pruning/alexnet_cifar10.ini')
 
     #config.load('configs/ablation_study/re_pruning_ac/finished/lenet_mnist_1.ini')
@@ -62,24 +62,48 @@ def main():
 
     #Batch mode
     paths = [
-            'configs/experiments/gd_top_k_mc_ac_dk/',
-            'configs/experiments/baseline/'
+            #'configs/experiments/gd_top_k_mc_ac_dk/',
+            #'configs/experiments/baseline/',
+            #'configs/ablation_study/admm_intra/',
+            'configs/ablation_study/admm_retrain/'
     ]
 
     for path in paths:
+        enablePrint()
+        print('BEGIN:', path, flush=True)
+        blockPrint()
         fnames = [f for f in listdir(path) if isfile(join(path, f))]
+        failed, succeeded = {}, {}
+        fail_ctr, success_ctr, ctr = 0, 0, 0
         for fname in fnames:
+            ctr+=1
+            enablePrint()
+            print('Experiment:', fname, flush=True)
+            blockPrint()
             try:
-                enablePrint()
-                print(fname, flush=True)
-                blockPrint()
+                start = timeit.default_timer()
                 config.load(path+fname)
                 experiment = experiment_factory.get_experiment(config)
                 experiment.dispatch()
+                stop = timeit.default_timer()
+                success_ctr+=1
+                succeeded[fname] = stop - start
             except Exception as e:
-                enablePrint()
-                print(e, flush=True)
-                blockPrint()
-
+                failed[fname] = e
+                fail_ctr += 1
+            enablePrint()
+            print('Success (Current):', (success_ctr) ,'/', ctr, flush=True)
+            print('Failed: (Current)', (fail_ctr) ,'/', ctr, flush=True)
+            print('Progress:', success_ctr+fail_ctr ,'/', len(fnames), flush=True)
+            blockPrint()
+        enablePrint()
+        print('Success (Total):', (success_ctr) ,'/', len(fnames), flush=True)
+        print('Failed (Total):', (fail_ctr) ,'/', len(fnames), flush=True)
+        for key in failed:
+            print(key, failed[key], flush=True)
+        for key in succeeded:
+            print(key, succeeded[key], flush=True)
+        print('END:', path, flush=True)
+        blockPrint()
 if __name__ == "__main__":
     main()
