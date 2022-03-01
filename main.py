@@ -64,8 +64,9 @@ def main():
     paths = [
             #'configs/experiments/gd_top_k_mc_ac_dk/',
             #'configs/experiments/baseline/',
+            'configs/experiments/re_pruning/'
             #'configs/ablation_study/admm_intra/',
-            'configs/ablation_study/admm_retrain/'
+            #'configs/ablation_study/admm_retrain/'
     ]
 
     for path in paths:
