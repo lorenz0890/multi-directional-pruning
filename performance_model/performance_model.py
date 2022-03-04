@@ -130,19 +130,23 @@ class PerformanceModel:
                     # TODO uz update
         return oh_admm
 
-    def __estimate_overhead(self, model):
+    def __estimate_overhead(self, model, epoch = None):
         #Assumptions: regularized baseline with gradient normalzation
         oh_grad_accumulation, oh_re_pruning, oh_gd_top_k, oh_gd_top_k_mc, oh_admm= 0, 0, 0, 0, 0
         if self.est_oh_re_pruning or self.est_oh_gd_top_k or self.est_oh_gd_top_k_mc:
-            oh_grad_accumulation = self.__estimate_overhead_grad_accumulation(model).item()
+            oh_grad_accumulation += self.__estimate_overhead_grad_accumulation(model).item()
         if self.est_oh_gd_top_k:
-            oh_gd_top_k = self.__estimate_overhead_gd_top_k(model).item()
+            oh_gd_top_k += self.__estimate_overhead_gd_top_k(model).item()
         if self.est_oh_re_pruning:
-            oh_re_pruning = self.__estimate_overhead_re_pruning_search(model).item()
-            oh_re_pruning += self.__estimate_overhead_mask_computation(model)
-            oh_re_pruning += self.__estimate_overhead_mask_application(model)
+            if epoch is None or epoch < self.config.get('SPECIFICATION', 'prune_epochs', int):
+                oh_re_pruning += self.__estimate_overhead_re_pruning_search(model).item()
+                oh_re_pruning += self.__estimate_overhead_mask_computation(model)
+                oh_re_pruning += self.__estimate_overhead_mask_application(model)
+            else:
+                oh_re_pruning += self.__estimate_overhead_mask_application(model) #thresholding approx. as mask aplication
         if self.est_oh_gd_top_k_mc:
-            oh_gd_top_k_mc = self.__estimate_overhead_gd_top_k(model).item()
+            if epoch is None or epoch % self.config.get('SPECIFICATION', 'se', int) == 0:
+                oh_gd_top_k_mc = self.__estimate_overhead_gd_top_k(model).item()
         if self.est_oh_admm:
             oh_admm = self.__estimate_overhead_admm(model).item()
 
@@ -150,7 +154,7 @@ class PerformanceModel:
 
 
 
-    def eval(self, model, ac = 1):
+    def eval(self, model, ac = 1, epoch = None):
         stats_batch = self.__current_flops(model, ac)
         self.flops_current = stats_batch[0]
         self.flops_current_base = stats_batch[1]
@@ -172,7 +176,7 @@ class PerformanceModel:
         self.c_sparsity_current = stats_batch[7]
         self.l_sparsity_current = stats_batch[8]
         self.g_sparsity_current = stats_batch[9]
-        self.oh = self.__estimate_overhead(model)
+        self.oh = self.__estimate_overhead(model, epoch)
 
     def __current_flops(self, model, ac):
         flops_i, flops_i_base, nonzero_i, c_nonzero_i, l_nonzero_i, g_nonzero_i = 0, 0, 0, 0, 0, 0

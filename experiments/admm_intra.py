@@ -59,6 +59,7 @@ class ADMMIntra:
                     self.performance_model.print_perf_stats()
                 self.performance_model.log_perf_stats()
                 self.performance_model.log_layer_sparsity(self.model)
+                self.logger.log('train_loss', loss.item())
                 optimizer.step()
 
             self.__test(config, model, device, test_loader)
@@ -78,7 +79,9 @@ class ADMMIntra:
                     self.performance_model.print_perf_stats()
                 self.performance_model.log_perf_stats()
                 self.performance_model.log_layer_sparsity(self.model)
+                self.logger.log('train_loss', loss.item())
                 optimizer.step()
+
 
             X = update_X(model)
             Z = update_Z_l1(X, U, config) if config.get('SPECIFICATION', 'l1', bool) else update_Z(X, U, config)

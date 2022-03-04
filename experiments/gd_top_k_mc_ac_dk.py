@@ -97,7 +97,7 @@ class MCGDTopKACDK:
                 self.gradient_diversity.select_delete_grads(batch_idx, epoch)
                 self.gradient_diversity.delete_selected_grads(model)
 
-                self.performance_model.eval(model, self.ac)
+                self.performance_model.eval(model, ac = self.ac, epoch=epoch)
                 if (batch_idx + 1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
                     self.performance_model.print_perf_stats()
                 self.performance_model.log_perf_stats()

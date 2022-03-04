@@ -137,7 +137,7 @@ class REPruningMCGDTopKACDKADMMIntra:
                     self.conv_pruning.apply_threshold(self.model)
                     self.linear_pruning.apply_threshold(self.model)
 
-                self.performance_model.eval(model, self.ac)
+                self.performance_model.eval(model, ac=self.ac, epoch=self.global_epochs)
                 if (batch_idx + 1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
                     self.performance_model.print_perf_stats()
                 self.performance_model.log_perf_stats()
@@ -201,7 +201,7 @@ class REPruningMCGDTopKACDKADMMIntra:
                     self.conv_pruning.apply_threshold(self.model)
                     self.linear_pruning.apply_threshold(self.model)
 
-                self.performance_model.eval(model, self.ac)
+                self.performance_model.eval(model, ac=self.ac, epoch=self.global_epochs)
                 if (batch_idx + 1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
                     self.performance_model.print_perf_stats()
                 self.performance_model.log_perf_stats()
@@ -289,7 +289,7 @@ class REPruningMCGDTopKACDKADMMIntra:
                     self.conv_pruning.apply_threshold(self.model)
                     self.linear_pruning.apply_threshold(self.model)
 
-                self.performance_model.eval(model, self.ac)
+                self.performance_model.eval(model, ac=self.ac, epoch=self.global_epochs)
                 if (batch_idx + 1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
                     self.performance_model.print_perf_stats()
                 self.performance_model.log_perf_stats()

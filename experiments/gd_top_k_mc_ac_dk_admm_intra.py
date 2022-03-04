@@ -106,7 +106,7 @@ class MCGDTopKACDKADMMIntra:
                 self.gradient_diversity.update_k(self.k)
                 self.gradient_diversity.select_delete_grads(batch_idx, self.global_epochs)
                 self.gradient_diversity.delete_selected_grads(model)
-                self.performance_model.eval(model, self.ac)
+                self.performance_model.eval(model, ac=self.ac, epoch=self.global_epochs)
                 if (batch_idx + 1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
                     self.performance_model.print_perf_stats()
                 self.performance_model.log_perf_stats()
@@ -158,7 +158,7 @@ class MCGDTopKACDKADMMIntra:
                 self.gradient_diversity.update_k(self.k)
                 self.gradient_diversity.select_delete_grads(batch_idx, self.global_epochs)
                 self.gradient_diversity.delete_selected_grads(model)
-                self.performance_model.eval(model, self.ac)
+                self.performance_model.eval(model, ac=self.ac, epoch=self.global_epochs)
                 if (batch_idx + 1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
                     self.performance_model.print_perf_stats()
                 self.performance_model.log_perf_stats()
@@ -235,7 +235,7 @@ class MCGDTopKACDKADMMIntra:
                 self.gradient_diversity.update_k(self.k)
                 self.gradient_diversity.select_delete_grads(batch_idx, self.global_epochs)
                 self.gradient_diversity.delete_selected_grads(model)
-                self.performance_model.eval(model, self.ac)
+                self.performance_model.eval(model, ac=self.ac, epoch=self.global_epochs)
                 if (batch_idx + 1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
                     self.performance_model.print_perf_stats()
                 self.performance_model.log_perf_stats()
