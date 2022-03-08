@@ -120,7 +120,7 @@ class ADMMIntra:
                 output = model(data)
                 loss = F.nll_loss(output, target)
                 loss.backward()
-                self.performance_model.eval(model, 1)
+                self.performance_model.eval(model, admm_mask=mask)
                 if (batch_idx + 1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
                     self.performance_model.print_perf_stats()
                 self.performance_model.log_perf_stats()

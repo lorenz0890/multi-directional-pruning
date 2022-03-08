@@ -2,8 +2,10 @@ from torchvision import datasets, transforms
 import torch
 
 from experiments import ADMMRetrain, ADMMIntra, GDTopK, MCGDTopK, MCGDTopKACDK, MCGDTopKAC, Baseline, \
-    MCGDTopKACDKADMMIntra, REPruningMCGDTopKACDKADMMIntra, REPruningAC
+    MCGDTopKACDKADMMIntra, REPruningMCGDTopKACDKADMMIntra, REPruningAC, MCGDTopKACDKADMMRetrain, REPruningADMMIntra, \
+    REPruningACADMMIntra, REPruningACADMMRetrain
 from experiments import REPruning
+from experiments.re_pruning_admm_retrain import REPruningADMMRetrain
 from utils import DataFactory, ModelFactory
 from utils import Logger
 from utils.visualization import Visualization
@@ -35,10 +37,20 @@ class ExperimentFactory:
             experiment = REPruning(model, train_loader, test_loader, config, logger, visualization)
         if config.get('EXPERIMENT', 'name', str) == 're_pruning_ac':
             experiment = REPruningAC(model, train_loader, test_loader, config, logger, visualization)
+        if config.get('EXPERIMENT', 'name', str) == 're_pruning_admm_intra':
+            experiment = REPruningADMMIntra(model, train_loader, test_loader, config, logger, visualization)
+        if config.get('EXPERIMENT', 'name', str) == 're_pruning_admm_retrain':
+            experiment = REPruningADMMRetrain(model, train_loader, test_loader, config, logger, visualization)
+        if config.get('EXPERIMENT', 'name', str) == 're_pruning_ac_admm_intra':
+            experiment = REPruningACADMMIntra(model, train_loader, test_loader, config, logger, visualization)
+        if config.get('EXPERIMENT', 'name', str) == 're_pruning_ac_admm_retrain':
+            experiment = REPruningACADMMRetrain(model, train_loader, test_loader, config, logger, visualization)
         if config.get('EXPERIMENT', 'name', str) == 'baseline':
             experiment = Baseline(model, train_loader, test_loader, config, logger, visualization)
         if config.get('EXPERIMENT', 'name', str) == 'gd_top_k_mc_ac_dk_admm_intra':
             experiment = MCGDTopKACDKADMMIntra(model, train_loader, test_loader, config, logger, visualization)
+        if config.get('EXPERIMENT', 'name', str) == 'gd_top_k_mc_ac_dk_admm_retrain':
+            experiment = MCGDTopKACDKADMMRetrain(model, train_loader, test_loader, config, logger, visualization)
         if config.get('EXPERIMENT', 'name', str) == 're_pruning_gd_top_k_mc_ac_dk_admm_intra':
             experiment = REPruningMCGDTopKACDKADMMIntra(model, train_loader, test_loader, config, logger, visualization)
         return experiment

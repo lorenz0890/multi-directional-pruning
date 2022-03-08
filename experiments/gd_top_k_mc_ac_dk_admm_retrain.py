@@ -13,7 +13,7 @@ from torchvision import datasets, transforms
 from tqdm import tqdm
 import random
 
-class MCGDTopKACDKADMMIntra:
+class MCGDTopKACDKADMMRetrain:
     def __init__(self, model, train_loader, test_loader, config, logger, visualization=None):
         self.model = model
         self.train_loader = train_loader
@@ -50,13 +50,12 @@ class MCGDTopKACDKADMMIntra:
         optimizer = PruneAdam(self.model.named_parameters(), lr=self.config.get('SPECIFICATION', 'lr', float),
                               eps=self.config.get('SPECIFICATION', 'adam_eps', float))
 
-        for i in range(self.config.get('SPECIFICATION', 'repeat', int)):
-            self.__train(self.config, self.model, self.device, self.train_loader, self.test_loader, optimizer)
-            mask = apply_l1_prune(self.model, self.device, self.config) if self.config.get('SPECIFICATION', 'l1', bool) else apply_prune(self.model, self.device, self.config)
-            print_prune(self.model)
-            self.__test(self.config, self.model, self.device, self.test_loader)
-            self.__retrain(self.config, self.model, mask, self.device, self.train_loader, self.test_loader, optimizer)
-            print(self.performance_model.flops_accumulated, self.performance_model.flops_accumulated_base, flush=True)
+        self.__train(self.config, self.model, self.device, self.train_loader, self.test_loader, optimizer)
+        mask = apply_l1_prune(self.model, self.device, self.config) if self.config.get('SPECIFICATION', 'l1', bool) else apply_prune(self.model, self.device, self.config)
+        print_prune(self.model)
+        self.__test(self.config, self.model, self.device, self.test_loader)
+        self.__retrain(self.config, self.model, mask, self.device, self.train_loader, self.test_loader, optimizer)
+        print(self.performance_model.flops_accumulated, self.performance_model.flops_accumulated_base, flush=True)
 
         self.logger.store()
         if self.config.get('OTHER', 'vis_model', bool): self.visualization.visualize_model(self.model)
@@ -235,7 +234,7 @@ class MCGDTopKACDKADMMIntra:
                 self.gradient_diversity.update_k(self.k)
                 self.gradient_diversity.select_delete_grads(batch_idx, self.global_epochs)
                 self.gradient_diversity.delete_selected_grads(model)
-                self.performance_model.eval(model, ac=self.ac, epoch=self.global_epochs, admm_mask=mask)
+                self.performance_model.eval(model, ac=self.ac, epoch=self.global_epochs)
                 if (batch_idx + 1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
                     self.performance_model.print_perf_stats()
                 self.performance_model.log_perf_stats()

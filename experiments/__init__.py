@@ -6,6 +6,11 @@ from .gd_top_k_mc_ac import MCGDTopKAC
 from .gd_top_k_mc_ac_dk import MCGDTopKACDK
 from .re_pruning import REPruning
 from .re_pruning_ac import REPruningAC
+from .re_pruning_admm_intra import REPruningADMMIntra
+from .re_pruning_admm_retrain import REPruningADMMRetrain
+from .re_pruning_ac_admm_intra import REPruningACADMMIntra
+from .re_pruning_ac_admm_retrain import REPruningACADMMRetrain
 from .baseline import Baseline
 from .gd_top_k_mc_ac_dk_admm_intra import MCGDTopKACDKADMMIntra
+from .gd_top_k_mc_ac_dk_admm_retrain import MCGDTopKACDKADMMRetrain
 from .re_pruning_gd_top_k_mc_ac_dk_admm_intra import REPruningMCGDTopKACDKADMMIntra

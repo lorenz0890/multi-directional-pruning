@@ -25,51 +25,57 @@ def main():
     config = Parser()
     experiment_factory = ExperimentFactory()
 
-    #config.load('configs/ablation_study/admm_retrain/lenet_mnist_1.ini')
+    #config.load('configs/ablation_study/admm_retrain/lenet_mnist_4.ini')
     #config.load('configs/ablation_study/admm_retrain/alexnet_cifar10_11.ini')
 
-    #config.load('configs/ablation_study/admm_intra/lenet_mnist_1.ini')
+    #config.load('configs/ablation_study/admm_intra/lenet_mnist_4.ini')
     #config.load('configs/ablation_study/admm_intra/alexnet_cifar10_11.ini')
 
-    #config.load('configs/ablation_study/gd_top_k/lenet_mnist_1.ini')
+    #config.load('configs/ablation_study/gd_top_k/lenet_mnist_4.ini')
     #config.load('configs/ablation_study/gd_top_k/alexnet_cifar10_11.ini')
 
-    #config.load('configs/ablation_study/gd_top_k_mc/lenet_mnist_1.ini')
-    #config.load('configs/ablation_study/gd_top_k_mc_ac/lenet_mnist_1.ini')
+    #config.load('configs/ablation_study/gd_top_k_mc/lenet_mnist_4.ini')
+    #config.load('configs/ablation_study/gd_top_k_mc_ac/lenet_mnist_4.ini')
 
-    #config.load('configs/gd_top_k_mc_ac_dk/lenet_mnist_1.ini')
+    #config.load('configs/gd_top_k_mc_ac_dk/lenet_mnist_4.ini')
     #config.load('configs/gd_top_k_mc_ac_dk/alexnet_cifar10_11.ini')
     #config.load('configs/gd_top_k_mc_ac_dk/vgg8_cifar10.ini')
     #config.load('configs/gd_top_k_mc_ac_dk/mobilenet_v3_s_cifar10.ini')
 
-    #config.load('configs/ablation_study/gd_top_k_mc_ac_dk_admm_intra/lenet_mnist_1.ini')
+    #config.load('configs/ablation_study/gd_top_k_mc_ac_dk_admm_intra/lenet_mnist_4.ini')
     #config.load('configs/gd_top_k_mc_ac_dk_admm_intra/alexnet_cifar10_11.ini')
 
-    #config.load('configs/ablation_study/re_pruning/excluded/lenet_mnist_1.ini')
+    #config.load('configs/ablation_study/re_pruning/excluded/lenet_mnist_4.ini')
     #config.load('configs/ablation_study/re_pruning/alexnet_cifar10_11.ini')
 
-    #config.load('configs/ablation_study/re_pruning_ac/finished/lenet_mnist_1.ini')
+    #config.load('configs/ablation_study/re_pruning_ac/finished/lenet_mnist_4.ini')
 
     #config.load('configs/baseline/vgg8_cifar10.ini')
     #config.load('configs/baseline/vgg8_bn_cifar10.ini')
     #config.load('configs/baseline/wrn16_8_cifar10.ini')
-    #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/lenet_mnist_1.ini')
+    #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/lenet_mnist_4.ini')
     #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/alexnet_cifar10_11.ini')
 
 
-    #config.load('configs/ablation_study/gd_top_k_mc_ac_dk_admm_intra/excluded/lenet_mnist.ini')
-    #experiment = experiment_factory.get_experiment(config)
-    #experiment.dispatch()
+    config.load('configs/ablation_study/re_pruning_ac_admm_retrain/lenet_mnist.ini')
+    experiment = experiment_factory.get_experiment(config)
+    experiment.dispatch()
 
 
     #Batch mode
+    '''
     paths = [
             #'configs/experiments/gd_top_k_mc_ac_dk/',
             #'configs/experiments/baseline/',
             #'configs/experiments/re_pruning/',
             #'configs/ablation_study/admm_intra/',
             #'configs/ablation_study/admm_retrain/'
-            'configs/ablation_study/alexnet_mixed/'
+            #'configs/ablation_study/gd_top_k/',
+            #'configs/ablation_study/gd_top_k_mc/',
+            #'configs/ablation_study/gd_top_k_mc_ac/',
+            #'configs/ablation_study/gd_top_k_mc_ac_dk/'
+            'configs/ablation_study/gd_top_k_mc_ac_dk_admm_retrain/'
+            #'configs/ablation_study/alexnet_mixed/'
     ]
 
     for path in paths:
@@ -109,6 +115,6 @@ def main():
             print(key, succeeded[key], flush=True)
         print('END:', path, flush=True)
         blockPrint()
-
+    '''
 if __name__ == "__main__":
     main()

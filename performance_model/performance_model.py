@@ -149,13 +149,14 @@ class PerformanceModel:
                 oh_gd_top_k_mc = self.__estimate_overhead_gd_top_k(model).item()
         if self.est_oh_admm:
             oh_admm = self.__estimate_overhead_admm(model).item()
+            oh_admm += self.__estimate_overhead_mask_application(model)
 
         return (oh_gd_top_k_mc + oh_gd_top_k + oh_re_pruning + oh_grad_accumulation + oh_admm)* 1e-9 #GFLOPs
 
 
 
-    def eval(self, model, ac = 1, epoch = None):
-        stats_batch = self.__current_flops(model, ac)
+    def eval(self, model, ac = 1, epoch = None, admm_mask=None):
+        stats_batch = self.__current_flops(model, ac, admm_mask)
         self.flops_current = stats_batch[0]
         self.flops_current_base = stats_batch[1]
         self.flops_accumulated += stats_batch[0]
@@ -178,7 +179,7 @@ class PerformanceModel:
         self.g_sparsity_current = stats_batch[9]
         self.oh = self.__estimate_overhead(model, epoch)
 
-    def __current_flops(self, model, ac):
+    def __current_flops(self, model, ac, admm_mask):
         flops_i, flops_i_base, nonzero_i, c_nonzero_i, l_nonzero_i, g_nonzero_i = 0, 0, 0, 0, 0, 0
         flops_i_fwd, flops_i_base_fwd = 0, 0
         flops_i_bwd, flops_i_base_bwd = 0, 0
@@ -205,7 +206,11 @@ class PerformanceModel:
 
                 if param.grad is not None:
                     total_g += torch.numel(param.grad)
-                    g_nonzero = torch.count_nonzero(param.grad)
+                    g_nonzero = None
+                    if admm_mask is not None:
+                        g_nonzero = torch.count_nonzero(param.grad*admm_mask[name])
+                    else:
+                        g_nonzero = torch.count_nonzero(param.grad)
                     g_nonzero_i += g_nonzero
                     flops_i_n_fwd = self.macs[prefix][0] * 2 * (nonzero / torch.numel(param)) # fwd
                     flops_i_n_bwd = 2 * flops_i_n_fwd * (g_nonzero/torch.numel(param.grad)).numpy() / ac  # bwd = 2*fwd*g_sparsity/ac
@@ -232,62 +237,6 @@ class PerformanceModel:
 
         return flops_i * 1e-9, flops_i_base * 1e-9, 1 - nonzero_i / total, flops_i_fwd, \
                flops_i_base_fwd, flops_i_bwd, flops_i_base_bwd, 1 - c_nonzero_i / total_c, 1 - l_nonzero_i / total_l, (1 - g_nonzero_i / total_g).numpy()
-
-    def __current_flops_deprecated(self, model, ac):
-        flops_i, flops_i_base, density_i, c_density_i, l_density_i, g_density_i = 0, 0, 0, 0, 0, 0
-
-        flops_i_fwd, flops_i_base_fwd = 0, 0
-        flops_i_bwd, flops_i_base_bwd = 0, 0
-        ctr = 0
-        ctr_c = 0
-        ctr_l = 0
-        ctr_g = 0
-        for name, param in model.named_parameters():
-            # https://openai.com/blog/ai-and-compute/
-            prefix = name.split('.')[0]
-            postfix = name.split('.')[1]
-            if not 'bias' in name:#postfix != 'bias':
-                density = (torch.count_nonzero(param) / torch.numel(param)).numpy()
-                c_density = 0.0
-                l_density = 0.0
-                ctr += 1
-                if 'conv' in name or 'features' in name:
-                    #print(name, density)
-                    c_density = density
-                    ctr_c+=1
-                if 'fc' in name or 'classifier' in name:
-                    l_density = density
-                    ctr_l+=1
-
-                if param.grad is not None:
-                    ctr_g+=1
-                    g_density = (torch.count_nonzero(param.grad) / torch.numel(param.grad)).numpy()
-                    g_density_i += g_density
-                    flops_i_n_fwd = self.macs[prefix][0] * 2 * density  # fwd
-                    flops_i_n_bwd = 2 * flops_i_n_fwd * g_density / ac# bwd = 2*fwd*g_sparsity/ac
-                    flops_i_fwd += flops_i_n_fwd
-                    flops_i_bwd += flops_i_n_bwd
-                    flops_i += flops_i_n_fwd + flops_i_n_bwd
-                else:
-                    flops_i_fwd += self.macs[prefix][0] * 2 * density
-                    flops_i += self.macs[prefix][0] * 2 * density
-
-                density_i += density
-                c_density_i += c_density
-                l_density_i += l_density
-
-                if param.grad is not None:
-                    flops_i_n_fwd = self.macs[prefix][0] * 2 # fwd,bwd updaten
-                    flops_i_n_bwd = 2 * flops_i_n_fwd
-                    flops_i_base_fwd += flops_i_n_fwd
-                    flops_i_base_bwd += flops_i_n_bwd
-                    flops_i_base += flops_i_n_fwd + flops_i_n_bwd
-                else:
-                    flops_i_n_fwd = self.macs[prefix][0] * 2
-                    flops_i_base += flops_i_n_fwd
-
-        return flops_i * 1e-9, flops_i_base * 1e-9, 1 - density_i / ctr, flops_i_fwd, \
-               flops_i_base_fwd, flops_i_bwd, flops_i_base_bwd, 1 - c_density_i / ctr_c, 1 - l_density_i / ctr_l, 1-g_density_i / ctr_g
 
     def print_memstats(self, batch_idx, interval):
         if batch_idx % interval == 0:
