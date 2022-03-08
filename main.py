@@ -56,8 +56,8 @@ def main():
     #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/lenet_mnist_4.ini')
     #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/alexnet_cifar10_11.ini')
 
-
-    config.load('configs/ablation_study/re_pruning_ac_admm_retrain/lenet_mnist.ini')
+    '''
+    config.load('configs/ablation_study/re_pruning_ac_admm_retrain/lenet_mnist_1.ini')
     experiment = experiment_factory.get_experiment(config)
     experiment.dispatch()
 
@@ -74,7 +74,11 @@ def main():
             #'configs/ablation_study/gd_top_k_mc/',
             #'configs/ablation_study/gd_top_k_mc_ac/',
             #'configs/ablation_study/gd_top_k_mc_ac_dk/'
-            'configs/ablation_study/gd_top_k_mc_ac_dk_admm_retrain/'
+            'configs/ablation_study/gd_top_k_mc_ac_dk_admm_retrain/',
+            'configs/ablation_study/re_pruning_ac_admm_intra/',
+            'configs/ablation_study/re_pruning_ac_admm_retrain',
+            'configs/ablation_study/re_pruning_admm_intra/',
+            'configs/ablation_study/re_pruning_admm_retrain',
             #'configs/ablation_study/alexnet_mixed/'
     ]
 
@@ -115,6 +119,6 @@ def main():
             print(key, succeeded[key], flush=True)
         print('END:', path, flush=True)
         blockPrint()
-    '''
+
 if __name__ == "__main__":
     main()
