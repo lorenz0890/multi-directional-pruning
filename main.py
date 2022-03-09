@@ -4,6 +4,7 @@ from utils import ExperimentFactory
 from os import listdir
 from os.path import isfile, join
 import timeit
+import traceback
 
 from tqdm import tqdm
 from functools import partialmethod
@@ -26,27 +27,27 @@ def main():
     experiment_factory = ExperimentFactory()
 
     #config.load('configs/ablation_study/admm_retrain/lenet_mnist_4.ini')
-    #config.load('configs/ablation_study/admm_retrain/alexnet_cifar10_11.ini')
+    #config.load('configs/ablation_study/admm_retrain/resnet18_cifar10_11.ini')
 
     #config.load('configs/ablation_study/admm_intra/lenet_mnist_4.ini')
-    #config.load('configs/ablation_study/admm_intra/alexnet_cifar10_11.ini')
+    #config.load('configs/ablation_study/admm_intra/resnet18_cifar10_11.ini')
 
     #config.load('configs/ablation_study/gd_top_k/lenet_mnist_4.ini')
-    #config.load('configs/ablation_study/gd_top_k/alexnet_cifar10_11.ini')
+    #config.load('configs/ablation_study/gd_top_k/resnet18_cifar10_11.ini')
 
     #config.load('configs/ablation_study/gd_top_k_mc/lenet_mnist_4.ini')
     #config.load('configs/ablation_study/gd_top_k_mc_ac/lenet_mnist_4.ini')
 
     #config.load('configs/gd_top_k_mc_ac_dk/lenet_mnist_4.ini')
-    #config.load('configs/gd_top_k_mc_ac_dk/alexnet_cifar10_11.ini')
+    #config.load('configs/gd_top_k_mc_ac_dk/resnet18_cifar10_11.ini')
     #config.load('configs/gd_top_k_mc_ac_dk/vgg8_cifar10.ini')
     #config.load('configs/gd_top_k_mc_ac_dk/mobilenet_v3_s_cifar10.ini')
 
     #config.load('configs/ablation_study/gd_top_k_mc_ac_dk_admm_intra/lenet_mnist_4.ini')
-    #config.load('configs/gd_top_k_mc_ac_dk_admm_intra/alexnet_cifar10_11.ini')
+    #config.load('configs/gd_top_k_mc_ac_dk_admm_intra/resnet18_cifar10_11.ini')
 
     #config.load('configs/ablation_study/re_pruning/excluded/lenet_mnist_4.ini')
-    #config.load('configs/ablation_study/re_pruning/alexnet_cifar10_11.ini')
+    #config.load('configs/ablation_study/re_pruning/resnet18_cifar10_11.ini')
 
     #config.load('configs/ablation_study/re_pruning_ac/finished/lenet_mnist_4.ini')
 
@@ -54,7 +55,7 @@ def main():
     #config.load('configs/baseline/vgg8_bn_cifar10.ini')
     #config.load('configs/baseline/wrn16_8_cifar10.ini')
     #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/lenet_mnist_4.ini')
-    #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/alexnet_cifar10_11.ini')
+    #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/resnet18_cifar10_11.ini')
 
     '''
     config.load('configs/ablation_study/re_pruning_ac_admm_retrain/lenet_mnist_1.ini')
@@ -74,12 +75,13 @@ def main():
             #'configs/ablation_study/gd_top_k_mc/',
             #'configs/ablation_study/gd_top_k_mc_ac/',
             #'configs/ablation_study/gd_top_k_mc_ac_dk/'
-            'configs/ablation_study/gd_top_k_mc_ac_dk_admm_retrain/',
-            'configs/ablation_study/re_pruning_ac_admm_intra/',
-            'configs/ablation_study/re_pruning_ac_admm_retrain',
-            'configs/ablation_study/re_pruning_admm_intra/',
-            'configs/ablation_study/re_pruning_admm_retrain',
-            #'configs/ablation_study/alexnet_mixed/'
+            #'configs/ablation_study/gd_top_k_mc_ac_dk_admm_retrain/',
+            #'configs/ablation_study/re_pruning_ac_admm_intra/',
+            #'configs/ablation_study/re_pruning_ac_admm_retrain/',
+            #'configs/ablation_study/re_pruning_admm_intra/',
+            #'configs/ablation_study/re_pruning_admm_retrain',
+            'configs/ablation_study/alexnet_mixed/',
+            #'configs/ablation_study/resnet18_mixed/'
     ]
 
     for path in paths:
@@ -103,9 +105,10 @@ def main():
                 success_ctr+=1
                 succeeded[fname] = stop - start
             except Exception as e:
-                failed[fname] = e
+                failed[fname] = traceback.format_exc()#e
                 fail_ctr += 1
             enablePrint()
+            print(failed[fname])
             print('Success (Current):', (success_ctr) ,'/', ctr, flush=True)
             print('Failed: (Current)', (fail_ctr) ,'/', ctr, flush=True)
             print('Progress:', success_ctr+fail_ctr ,'/', len(fnames), flush=True)
