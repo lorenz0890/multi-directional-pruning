@@ -80,8 +80,8 @@ def main():
             #'configs/ablation_study/re_pruning_ac_admm_retrain/',
             #'configs/ablation_study/re_pruning_admm_intra/',
             #'configs/ablation_study/re_pruning_admm_retrain',
-            'configs/ablation_study/alexnet_mixed/',
-            #'configs/ablation_study/resnet18_mixed/'
+            #'configs/ablation_study/alexnet_mixed/',
+            'configs/ablation_study/resnet18_mixed/'
     ]
 
     for path in paths:
@@ -108,7 +108,6 @@ def main():
                 failed[fname] = traceback.format_exc()#e
                 fail_ctr += 1
             enablePrint()
-            print(failed[fname])
             print('Success (Current):', (success_ctr) ,'/', ctr, flush=True)
             print('Failed: (Current)', (fail_ctr) ,'/', ctr, flush=True)
             print('Progress:', success_ctr+fail_ctr ,'/', len(fnames), flush=True)
