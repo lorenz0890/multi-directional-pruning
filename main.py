@@ -57,14 +57,14 @@ def main():
     #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/lenet_mnist_4.ini')
     #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/resnet18_cifar10_11.ini')
 
-    '''
-    config.load('configs/ablation_study/re_pruning_ac_admm_retrain/lenet_mnist_1.ini')
+
+    config.load('configs/experiments/baseline/alexnet_imagenet.ini')
     experiment = experiment_factory.get_experiment(config)
     experiment.dispatch()
 
-
-    #Batch mode
     '''
+    #Batch mode
+    
     paths = [
             #'configs/experiments/gd_top_k_mc_ac_dk/',
             #'configs/experiments/baseline/',
@@ -121,6 +121,6 @@ def main():
             print(key, succeeded[key], flush=True)
         print('END:', path, flush=True)
         blockPrint()
-
+'''
 if __name__ == "__main__":
     main()

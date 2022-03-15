@@ -6,7 +6,8 @@ from torchvision import datasets, transforms
 import torch
 
 from model import LeNet, AlexNet, VGG16, ResNet18, AlexNet_S, VGG16BN, VGG13, VGG13BN, VGG11, VGG11BN, MobileNetV2, \
-    MobileNetV3_S, MobileNetV3_L, VGG8, VGG8BN, WRN16_8, WRN16_10, WRN22_8, WRN28_10
+    MobileNetV3_S, MobileNetV3_L, VGG8, VGG8BN, WRN16_8, WRN16_10, WRN22_8, WRN28_10, ResNet34, ResNet50, DenseNet121, \
+    DenseNet161, DenseNet169, DenseNet201
 from .custom_init import truncated_normal_variance_scaling
 
 class ModelFactory:
@@ -41,6 +42,10 @@ class ModelFactory:
             model = VGG8BN(config.get('SPECIFICATION', 'num_classes', int)).to(device)
         elif config.get('EXPERIMENT', 'model', str) == 'resnet18':
             model = ResNet18(config.get('SPECIFICATION', 'num_classes', int)).to(device)
+        elif config.get('EXPERIMENT', 'model', str) == 'resnet34':
+            model = ResNet34(config.get('SPECIFICATION', 'num_classes', int)).to(device)
+        elif config.get('EXPERIMENT', 'model', str) == 'resnet50':
+            model = ResNet50(config.get('SPECIFICATION', 'num_classes', int)).to(device)
         elif config.get('EXPERIMENT', 'model', str) == 'mobilenet_v2':
             model = MobileNetV2(config.get('SPECIFICATION', 'num_classes', int)).to(device)
         elif config.get('EXPERIMENT', 'model', str) == 'mobilenet_v3_s':
@@ -55,6 +60,14 @@ class ModelFactory:
             model = WRN22_8(config.get('SPECIFICATION', 'num_classes', int)).to(device)
         elif config.get('EXPERIMENT', 'model', str) == 'wrn28_10':
             model = WRN28_10(config.get('SPECIFICATION', 'num_classes', int)).to(device)
+        elif config.get('EXPERIMENT', 'model', str) == 'densenet121':
+            model = DenseNet121(config.get('SPECIFICATION', 'num_classes', int)).to(device)
+        elif config.get('EXPERIMENT', 'model', str) == 'densenet161':
+            model = DenseNet161(config.get('SPECIFICATION', 'num_classes', int)).to(device)
+        elif config.get('EXPERIMENT', 'model', str) == 'densenet169':
+            model = DenseNet169(config.get('SPECIFICATION', 'num_classes', int)).to(device)
+        elif config.get('EXPERIMENT', 'model', str) == 'densenet201':
+            model = DenseNet201(config.get('SPECIFICATION', 'num_classes', int)).to(device)
 
         '''
         def init_weights(m):

@@ -61,19 +61,34 @@ class DataFactory:
                              ])), shuffle=True, batch_size=config.get('EXPERIMENT', 'train_batch_size', int), **kwargs)
         return train_loader, test_loader
 
-    def __get_tiny_imagenet(self, config, kwargs):
-        raise NotImplementedError
+    def __get_imagenet(self, config, kwargs):
+        train_loader = torch.utils.data.DataLoader(datasets.ImageFolder(root="./data/imagenet/train", transform=transforms.Compose(
+            [
+                transforms.RandomResizedCrop(224),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                transforms.Normalize((0.485, 0.456, 0.406),
+                                     (0.229, 0.224, 0.225))
+            ])))
+        test_loader = torch.utils.data.DataLoader(datasets.ImageFolder(root="./data/imagenet/val", transform=transforms.Compose([
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
+        ])))
+        return train_loader, test_loader
+
 
     def get_dataset(self, config):
-        use_cuda = not config.get('OTHER', 'no_cuda', bool) and torch.cuda.is_available()
-        kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
-        train_loader, test_loader = None, None
-        if config.get('EXPERIMENT', 'dataset', str) == 'mnist':
-            train_loader, test_loader = self.__get_mnist(config, kwargs)
-        elif config.get('EXPERIMENT', 'dataset', str) == 'cifar10':
-            train_loader, test_loader = self.__get_cifar10(config, kwargs)
-        elif config.get('EXPERIMENT', 'dataset', str) == 'cifar100':
-            train_loader, test_loader = self.__get_cifar100(config, kwargs)
-        elif config.get('EXPERIMENT', 'dataset', str) == 'tinyimagenet':
-            train_loader, test_loader = self.__get_tiny_imagenet(config, kwargs)
-        return train_loader, test_loader
+            use_cuda = not config.get('OTHER', 'no_cuda', bool) and torch.cuda.is_available()
+            kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
+            train_loader, test_loader = None, None
+            if config.get('EXPERIMENT', 'dataset', str) == 'mnist':
+                train_loader, test_loader = self.__get_mnist(config, kwargs)
+            elif config.get('EXPERIMENT', 'dataset', str) == 'cifar10':
+                train_loader, test_loader = self.__get_cifar10(config, kwargs)
+            elif config.get('EXPERIMENT', 'dataset', str) == 'cifar100':
+                train_loader, test_loader = self.__get_cifar100(config, kwargs)
+            elif config.get('EXPERIMENT', 'dataset', str) == 'imagenet':
+                train_loader, test_loader = self.__get_imagenet(config, kwargs)
+            return train_loader, test_loader
