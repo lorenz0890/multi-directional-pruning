@@ -207,7 +207,7 @@ class PerformanceModel:
                 if param.grad is not None:
                     total_g += torch.numel(param.grad)
                     g_nonzero = None
-                    if admm_mask is not None:
+                    if admm_mask is not None and name in admm_mask:
                         g_nonzero = torch.count_nonzero(param.grad*admm_mask[name])
                     else:
                         g_nonzero = torch.count_nonzero(param.grad)

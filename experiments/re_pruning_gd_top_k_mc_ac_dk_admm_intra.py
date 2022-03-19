@@ -81,7 +81,7 @@ class REPruningMCGDTopKACDKADMMIntra:
         if self.config.get('OTHER', 'vis_model', bool): self.visualization.visualize_model(self.model)
         if self.config.get('OTHER', 'vis_log', bool):
             self.visualization.visualize_perfstats(self.logger)
-            self.visualization.visualize_key_list(self.logger, ['top_k', 'accumulation' 'test_accuracy', 'test_loss', 'train_loss'])
+            self.visualization.visualize_key_list(self.logger, ['top_k', 'accumulation', 'test_accuracy', 'test_loss', 'train_loss'])
         if self.config.get('OTHER', 'save_model', bool): torch.save(self.model.state_dict(),
                                                                     self.config.get('OTHER', 'out_path', str))
 
