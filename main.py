@@ -83,7 +83,7 @@ def main():
             #'configs/ablation_study/alexnet_mixed/',
             #'configs/ablation_study/resnet18_mixed/',
             #'configs/ablation_study/re_pruning_gd_top_k_mc_ac_dk_admm_intra/',
-            'configs/ablation_study/re_pruning_gd_top_k_mc_ac_dk_admm_retrain'
+            'configs/ablation_study/re_pruning_gd_top_k_mc_ac_dk_admm_retrain/'
     ]
 
     for path in paths:
