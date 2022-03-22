@@ -40,7 +40,7 @@ def main():
 
     #config.load('configs/gd_top_k_mc_ac_dk/lenet_mnist_4.ini')
     #config.load('configs/gd_top_k_mc_ac_dk/resnet18_cifar10_11.ini')
-    #config.load('configs/gd_top_k_mc_ac_dk/vgg8_cifar10.ini')
+    #config.load('configs/gd_top_k_mc_ac_dk/vgg8_cifar10_2.ini')
     #config.load('configs/gd_top_k_mc_ac_dk/mobilenet_v3_s_cifar10.ini')
 
     #config.load('configs/ablation_study/gd_top_k_mc_ac_dk_admm_intra/lenet_mnist_4.ini')
@@ -51,13 +51,13 @@ def main():
 
     #config.load('configs/ablation_study/re_pruning_ac/finished/lenet_mnist_4.ini')
 
-    #config.load('configs/baseline/vgg8_cifar10.ini')
+    #config.load('configs/baseline/vgg8_cifar10_2.ini')
     #config.load('configs/baseline/vgg8_bn_cifar10.ini')
     #config.load('configs/baseline/wrn16_8_cifar10.ini')
     #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/lenet_mnist_4.ini')
     #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/resnet18_cifar10_11.ini')
 
-
+    '''
     config.load('configs/experiments/baseline/resnet20_cifar10.ini')
     experiment = experiment_factory.get_experiment(config)
     experiment.dispatch()
@@ -67,7 +67,7 @@ def main():
     
     paths = [
             #'configs/experiments/gd_top_k_mc_ac_dk/',
-            #'configs/experiments/baseline/',
+            'configs/experiments/baseline/',
             #'configs/experiments/re_pruning/',
             #'configs/ablation_study/admm_intra/',
             #'configs/ablation_study/admm_retrain/'
@@ -122,6 +122,6 @@ def main():
             print(key, succeeded[key], flush=True)
         print('END:', path, flush=True)
         blockPrint()
-    '''
+
 if __name__ == "__main__":
     main()
