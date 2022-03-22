@@ -7,7 +7,7 @@ import torch
 
 from model import LeNet, AlexNet, VGG16, ResNet18, AlexNet_S, VGG16BN, VGG13, VGG13BN, VGG11, VGG11BN, MobileNetV2, \
     MobileNetV3_S, MobileNetV3_L, VGG8, VGG8BN, WRN16_8, WRN16_10, WRN22_8, WRN28_10, ResNet34, ResNet50, DenseNet121, \
-    DenseNet161, DenseNet169, DenseNet201
+    DenseNet161, DenseNet169, DenseNet201, ResNet56, ResNet44, ResNet32, ResNet20
 from .custom_init import truncated_normal_variance_scaling
 
 class ModelFactory:
@@ -68,6 +68,14 @@ class ModelFactory:
             model = DenseNet169(config.get('SPECIFICATION', 'num_classes', int)).to(device)
         elif config.get('EXPERIMENT', 'model', str) == 'densenet201':
             model = DenseNet201(config.get('SPECIFICATION', 'num_classes', int)).to(device)
+        elif config.get('EXPERIMENT', 'model', str) == 'resnet20':
+            model = ResNet20(config.get('SPECIFICATION', 'num_classes', int)).to(device)
+        elif config.get('EXPERIMENT', 'model', str) == 'resnet32':
+            model = ResNet32(config.get('SPECIFICATION', 'num_classes', int)).to(device)
+        elif config.get('EXPERIMENT', 'model', str) == 'resnet44':
+            model = ResNet44(config.get('SPECIFICATION', 'num_classes', int)).to(device)
+        elif config.get('EXPERIMENT', 'model', str) == 'resnet56':
+            model = ResNet56(config.get('SPECIFICATION', 'num_classes', int)).to(device)
 
         '''
         def init_weights(m):

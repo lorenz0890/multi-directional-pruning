@@ -61,8 +61,8 @@ class DataFactory:
                              ])), shuffle=True, batch_size=config.get('EXPERIMENT', 'train_batch_size', int), **kwargs)
         return train_loader, test_loader
 
-    def __get_imagenet(self, config, kwargs):
-        train_loader = torch.utils.data.DataLoader(datasets.ImageFolder(root="./data/imagenet/train", transform=transforms.Compose(
+    def __get_imagenet_tiny(self, config, kwargs):
+        train_loader = torch.utils.data.DataLoader(datasets.ImageFolder(root="./data/imagenet_tiny/train", transform=transforms.Compose(
             [
                 transforms.RandomResizedCrop(224),
                 transforms.RandomHorizontalFlip(),
@@ -70,7 +70,24 @@ class DataFactory:
                 transforms.Normalize((0.485, 0.456, 0.406),
                                      (0.229, 0.224, 0.225))
             ])))
-        test_loader = torch.utils.data.DataLoader(datasets.ImageFolder(root="./data/imagenet/val", transform=transforms.Compose([
+        test_loader = torch.utils.data.DataLoader(datasets.ImageFolder(root="./data/imagenet_tiny/val", transform=transforms.Compose([
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
+        ])))
+        return train_loader, test_loader
+
+    def __get_imagenet_full(self, config, kwargs):
+        train_loader = torch.utils.data.DataLoader(datasets.ImageFolder(root="./data/imagenet_full/train", transform=transforms.Compose(
+            [
+                transforms.RandomResizedCrop(224),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                transforms.Normalize((0.485, 0.456, 0.406),
+                                     (0.229, 0.224, 0.225))
+            ])))
+        test_loader = torch.utils.data.DataLoader(datasets.ImageFolder(root="./data/imagenet_full/val", transform=transforms.Compose([
             transforms.Resize(256),
             transforms.CenterCrop(224),
             transforms.ToTensor(),
@@ -89,6 +106,8 @@ class DataFactory:
                 train_loader, test_loader = self.__get_cifar10(config, kwargs)
             elif config.get('EXPERIMENT', 'dataset', str) == 'cifar100':
                 train_loader, test_loader = self.__get_cifar100(config, kwargs)
-            elif config.get('EXPERIMENT', 'dataset', str) == 'imagenet':
-                train_loader, test_loader = self.__get_imagenet(config, kwargs)
+            elif config.get('EXPERIMENT', 'dataset', str) == 'imagenet_tiny':
+                train_loader, test_loader = self.__get_imagenet_tiny(config, kwargs)
+            elif config.get('EXPERIMENT', 'dataset', str) == 'imagenet_full':
+                train_loader, test_loader = self.__get_imagenet_full(config, kwargs)
             return train_loader, test_loader

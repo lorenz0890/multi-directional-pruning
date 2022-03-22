@@ -10,8 +10,12 @@ from .vgg11_bn import VGG11BN
 from .vgg13_bn import VGG13BN
 from .vgg8_bn import VGG8BN
 from .resnet18 import ResNet18
+from .resnet20 import ResNet20
+from .resnet32 import ResNet32
 from .resnet34 import ResNet34
+from .resnet44 import ResNet44
 from .resnet50 import ResNet50
+from .resnet56 import ResNet56
 from .densenet121 import DenseNet121
 from .densenet161 import DenseNet161
 from .densenet169 import DenseNet169

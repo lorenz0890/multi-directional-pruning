@@ -49,6 +49,8 @@ def update_X(model):
 def update_Z(X, U, config):
     new_Z = ()
     idx = 0
+    print(len(X), flush=True)
+    print(len(config.get('SPECIFICATION', 'percent', lambda a : [float(b) for b in str(a).split(',')])), flush=True)
     for x, u in zip(X, U):
         z = x + u
         pcen = np.percentile(abs(z), 100 *  config.get('SPECIFICATION', 'percent', lambda a : [float(b) for b in str(a).split(',')])[idx])
