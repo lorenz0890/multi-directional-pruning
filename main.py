@@ -26,35 +26,35 @@ def main():
     config = Parser()
     experiment_factory = ExperimentFactory()
 
-    #config.load('configs/ablation_study/admm_retrain/alexnet_cifar10_504.ini')
+    #config.load('configs/ablation_study/admm_retrain/resnet_cifar10_2504.ini')
     #config.load('configs/ablation_study/admm_retrain/resnet18_cifar10_1011.ini')
 
-    #config.load('configs/ablation_study/admm_intra/alexnet_cifar10_504.ini')
+    #config.load('configs/ablation_study/admm_intra/resnet_cifar10_2504.ini')
     #config.load('configs/ablation_study/admm_intra/resnet18_cifar10_1011.ini')
 
-    #config.load('configs/ablation_study/gd_top_k/alexnet_cifar10_504.ini')
+    #config.load('configs/ablation_study/gd_top_k/resnet_cifar10_2504.ini')
     #config.load('configs/ablation_study/gd_top_k/resnet18_cifar10_1011.ini')
 
-    #config.load('configs/ablation_study/gd_top_k_mc/alexnet_cifar10_504.ini')
-    #config.load('configs/ablation_study/gd_top_k_mc_ac/alexnet_cifar10_504.ini')
+    #config.load('configs/ablation_study/gd_top_k_mc/resnet_cifar10_2504.ini')
+    #config.load('configs/ablation_study/gd_top_k_mc_ac/resnet_cifar10_2504.ini')
 
-    #config.load('configs/gd_top_k_mc_ac_dk/alexnet_cifar10_504.ini')
+    #config.load('configs/gd_top_k_mc_ac_dk/resnet_cifar10_2504.ini')
     #config.load('configs/gd_top_k_mc_ac_dk/resnet18_cifar10_1011.ini')
     #config.load('configs/gd_top_k_mc_ac_dk/vgg8_cifar10_2.ini')
     #config.load('configs/gd_top_k_mc_ac_dk/mobilenet_v3_s_cifar10.ini')
 
-    #config.load('configs/ablation_study/gd_top_k_mc_ac_dk_admm_intra/alexnet_cifar10_504.ini')
+    #config.load('configs/ablation_study/gd_top_k_mc_ac_dk_admm_intra/resnet_cifar10_2504.ini')
     #config.load('configs/gd_top_k_mc_ac_dk_admm_intra/resnet18_cifar10_1011.ini')
 
-    #config.load('configs/ablation_study/re_pruning/excluded/alexnet_cifar10_504.ini')
+    #config.load('configs/ablation_study/re_pruning/excluded/resnet_cifar10_2504.ini')
     #config.load('configs/ablation_study/re_pruning/resnet18_cifar10_1011.ini')
 
-    #config.load('configs/ablation_study/re_pruning_ac/finished/alexnet_cifar10_504.ini')
+    #config.load('configs/ablation_study/re_pruning_ac/finished/resnet_cifar10_2504.ini')
 
     #config.load('configs/baseline/vgg8_cifar10_2.ini')
     #config.load('configs/baseline/vgg8_bn_cifar10.ini')
     #config.load('configs/baseline/wrn16_8_cifar10.ini')
-    #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/alexnet_cifar10_504.ini')
+    #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/resnet_cifar10_2504.ini')
     #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/resnet18_cifar10_1011.ini')
 
     '''
@@ -68,7 +68,7 @@ def main():
     paths = [
             #'configs/experiments/gd_top_k_mc_ac_dk/',
             #'configs/experiments/baseline/',
-            'configs/experiments/re_pruning/',
+            #'configs/experiments/re_pruning/',
             #'configs/ablation_study/admm_intra/',
             #'configs/ablation_study/admm_retrain/'
             #'configs/ablation_study/gd_top_k/',
@@ -82,6 +82,8 @@ def main():
             #'configs/ablation_study/re_pruning_admm_retrain',
             #'configs/ablation_study/alexnet_mixed/',
             #'configs/ablation_study/resnet18_mixed/',
+            'configs/ablation_study/resnet18_mixed2/',
+            'configs/ablation_study/resnet18_mixed3/',
             #'configs/ablation_study/re_pruning_gd_top_k_mc_ac_dk_admm_intra/',
             #'configs/ablation_study/re_pruning_gd_top_k_mc_ac_dk_admm_retrain/'
     ]
