@@ -46,15 +46,17 @@ class RePruningLinearDet(RePruning):
                 metric_threshold = np.quantile(list(self.metrics.values()), self.metric_quantile)
                 candidates = {}
                 for key in self.metrics:
-                    if self.metrics[key] <= metric_threshold and not np.isnan(self.metrics[key]) and not self.metrics[ key] == float('inf'):
+                    if self.metrics[key] <= metric_threshold and not np.isnan(self.metrics[key]) and not self.metrics[key] == float('inf'):
                         idx = key.split(':')
                         if idx[0] not in candidates:
                             candidates[idx[0]] = []
-                        else:
-                            candidates[idx[0]].append(key)
+                        candidates[idx[0]].append(key)
+                print(metric_threshold, flush=True)
                 for n in candidates:
+                    print(n, model.state_dict()[n].data.shape, len(candidates[n]), flush=True)
                     mask = torch.ones_like(model.state_dict()[n].data)
                     for key in candidates[n]:
+                        print(key, flush=True)
                         idx = key.split(':')
                         mask[int(idx[1]):int(idx[1]) + int(idx[3])][int(idx[2]):int(idx[2]) + int(idx[4])] = mask[int(
                             idx[1]):int(idx[1]) + int(idx[3])][int(idx[2]):int(idx[2]) + int(idx[4])] * 0.0
