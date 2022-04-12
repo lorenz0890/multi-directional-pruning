@@ -58,7 +58,7 @@ def main():
     #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/resnet18_cifar10_1011.ini')
 
 
-    config.load('configs/ablation_study/re_pruning_ac/vgg8_test.ini')
+    config.load('configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche2/mobilenet_v2_cifar10.ini')
     experiment = experiment_factory.get_experiment(config)
     experiment.dispatch()
 
@@ -86,6 +86,8 @@ def main():
             #'configs/ablation_study/resnet18_mixed3/',
             #'configs/ablation_study/re_pruning_gd_top_k_mc_ac_dk_admm_intra/',
             #'configs/ablation_study/re_pruning_gd_top_k_mc_ac_dk_admm_retrain/'
+            #'configs/ablation_study/re_pruning_ac/',
+            'configs/ablation_study/re_pruning/',
     ]
 
     for path in paths:
