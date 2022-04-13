@@ -235,8 +235,16 @@ class PerformanceModel:
                     flops_i_n_fwd = self.macs[prefix][0] * 2
                     flops_i_base += flops_i_n_fwd
 
-        return flops_i * 1e-9, flops_i_base * 1e-9, 1 - nonzero_i / total, flops_i_fwd, \
-               flops_i_base_fwd, flops_i_bwd, flops_i_base_bwd, 1 - c_nonzero_i / total_c, 1 - l_nonzero_i / total_l, (1 - g_nonzero_i / total_g).numpy()
+
+
+
+        sp_t = 1 - nonzero_i / total if total > 0 else 0
+        sp_c = 1 - 1 - c_nonzero_i / total_c if total_c > 0 else 0
+        sp_l = 1 - l_nonzero_i / total_l if total_l > 0 else 0
+        sp_g = (1 - g_nonzero_i / total_g).numpy() if total_g > 0 else 0
+
+        return flops_i * 1e-9, flops_i_base * 1e-9, sp_t, flops_i_fwd, \
+               flops_i_base_fwd, flops_i_bwd, flops_i_base_bwd, sp_c, sp_l, sp_g
 
     def print_memstats(self, batch_idx, interval):
         if batch_idx % interval == 0:

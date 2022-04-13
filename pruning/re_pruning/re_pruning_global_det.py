@@ -74,31 +74,32 @@ class RePruningGlobalDet(RePruning):
                                             else:
                                                 self.metrics["{}:{}:{}:{}:{}".format(n, k, j, sz_k, sz_j)] = float(
                                                     'inf')
-
-                metric_threshold = np.quantile(list(self.metrics.values()), self.metric_quantile)
-                print(metric_threshold)
-                candidates = {}
-                for key in self.metrics:
-                    if self.metrics[key] <= metric_threshold and not np.isnan(self.metrics[key]) and not self.metrics[key] == float('inf'):
-                        idx = key.split(':')
-                        if idx[0] not in candidates:
-                            candidates[idx[0]] = []
+                metric_vals = list(self.metrics.values())
+                if len(metric_vals) > 0:
+                    metric_threshold = np.quantile(metric_vals, self.metric_quantile)
+                    print(metric_threshold)
+                    candidates = {}
+                    for key in self.metrics:
+                        if self.metrics[key] <= metric_threshold and not np.isnan(self.metrics[key]) and not self.metrics[key] == float('inf'):
+                            idx = key.split(':')
+                            if idx[0] not in candidates:
+                                candidates[idx[0]] = []
+                            else:
+                                candidates[idx[0]].append(key)
+                    for n in candidates:
+                        mask = torch.ones_like(model.state_dict()[n].data)
+                        for key in candidates[n]:
+                            idx = key.split(':')
+                            mask[int(idx[1]):int(idx[1]) + int(idx[3])][int(idx[2]):int(idx[2]) + int(idx[4])] = mask[int(
+                                idx[1]):int(idx[1]) + int(idx[3])][int(idx[2]):int(idx[2]) + int(idx[4])] * 0.0
+                        mask = mask * torch.where(
+                            torch.abs(model.state_dict()[n].data) > self.magnitude_threshold,
+                            torch.ones_like(model.state_dict()[n].data),
+                            torch.zeros_like(model.state_dict()[n].data))
+                        if n in self.masks:
+                            self.masks[n] = self.masks[n] * mask
                         else:
-                            candidates[idx[0]].append(key)
-                for n in candidates:
-                    mask = torch.ones_like(model.state_dict()[n].data)
-                    for key in candidates[n]:
-                        idx = key.split(':')
-                        mask[int(idx[1]):int(idx[1]) + int(idx[3])][int(idx[2]):int(idx[2]) + int(idx[4])] = mask[int(
-                            idx[1]):int(idx[1]) + int(idx[3])][int(idx[2]):int(idx[2]) + int(idx[4])] * 0.0
-                    mask = mask * torch.where(
-                        torch.abs(model.state_dict()[n].data) > self.magnitude_threshold,
-                        torch.ones_like(model.state_dict()[n].data),
-                        torch.zeros_like(model.state_dict()[n].data))
-                    if n in self.masks:
-                        self.masks[n] = self.masks[n] * mask
-                    else:
-                        self.masks[n] = mask
+                            self.masks[n] = mask
 
     def apply_mask(self, model):
         with torch.no_grad():

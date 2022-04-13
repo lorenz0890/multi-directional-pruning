@@ -41,7 +41,7 @@ def main():
     #config.load('configs/gd_top_k_mc_ac_dk/resnet_cifar10_2504.ini')
     #config.load('configs/gd_top_k_mc_ac_dk/resnet18_cifar10_1011.ini')
     #config.load('configs/gd_top_k_mc_ac_dk/vgg8_cifar10_2.ini')
-    #config.load('configs/gd_top_k_mc_ac_dk/mobilenet_v3_s_cifar10.ini')
+    #config.load('configs/gd_top_k_mc_ac_dk/mobilenet_v3_s_cifar10_1.ini')
 
     #config.load('configs/ablation_study/gd_top_k_mc_ac_dk_admm_intra/resnet_cifar10_2504.ini')
     #config.load('configs/gd_top_k_mc_ac_dk_admm_intra/resnet18_cifar10_1011.ini')
@@ -58,7 +58,7 @@ def main():
     #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/resnet18_cifar10_1011.ini')
 
 
-    config.load('configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche2/mobilenet_v2_cifar10.ini')
+    config.load('configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche4/resnet20_cifar10.ini')
     experiment = experiment_factory.get_experiment(config)
     experiment.dispatch()
 
@@ -87,7 +87,8 @@ def main():
             #'configs/ablation_study/re_pruning_gd_top_k_mc_ac_dk_admm_intra/',
             #'configs/ablation_study/re_pruning_gd_top_k_mc_ac_dk_admm_retrain/'
             #'configs/ablation_study/re_pruning_ac/',
-            'configs/ablation_study/re_pruning/',
+            #'configs/ablation_study/re_pruning/',
+            'configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche2/'
     ]
 
     for path in paths:
@@ -127,6 +128,6 @@ def main():
             print(key, succeeded[key], flush=True)
         print('END:', path, flush=True)
         blockPrint()
-    '''
+ '''
 if __name__ == "__main__":
     main()
