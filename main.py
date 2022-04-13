@@ -58,7 +58,7 @@ def main():
     #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/resnet18_cifar10_1011.ini')
 
 
-    config.load('configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche4/resnet20_cifar10.ini')
+    config.load('configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche6/resnet50_cifar10.ini')
     experiment = experiment_factory.get_experiment(config)
     experiment.dispatch()
 
