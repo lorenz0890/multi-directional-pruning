@@ -57,11 +57,10 @@ def main():
     #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/resnet_cifar10_2504.ini')
     #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/resnet18_cifar10_1011.ini')
 
-
+    '''
     config.load('configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche6/resnet50_cifar10.ini')
     experiment = experiment_factory.get_experiment(config)
     experiment.dispatch()
-
     '''
     #Batch mode
     
@@ -88,7 +87,14 @@ def main():
             #'configs/ablation_study/re_pruning_gd_top_k_mc_ac_dk_admm_retrain/'
             #'configs/ablation_study/re_pruning_ac/',
             #'configs/ablation_study/re_pruning/',
-            'configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche2/'
+            #'configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche1/',
+            #'configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche2/',
+            #'configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche3/',
+            #'configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche4/',
+            #'configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche5/',
+            #'configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche6/',
+            #'configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche7/',
+            #'configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche8/',
     ]
 
     for path in paths:
@@ -128,6 +134,6 @@ def main():
             print(key, succeeded[key], flush=True)
         print('END:', path, flush=True)
         blockPrint()
- '''
+
 if __name__ == "__main__":
     main()
