@@ -53,12 +53,12 @@ class RePruningLinearDet(RePruning):
                             if idx[0] not in candidates:
                                 candidates[idx[0]] = []
                             candidates[idx[0]].append(key)
-                    print(metric_threshold, flush=True)
+                    #print(metric_threshold, flush=True)
                     for n in candidates:
-                        print(n, model.state_dict()[n].data.shape, len(candidates[n]), flush=True)
+                        #print(n, model.state_dict()[n].data.shape, len(candidates[n]), flush=True)
                         mask = torch.ones_like(model.state_dict()[n].data)
                         for key in candidates[n]:
-                            print(key, flush=True)
+                            #print(key, flush=True)
                             idx = key.split(':')
                             mask[int(idx[1]):int(idx[1]) + int(idx[3])][int(idx[2]):int(idx[2]) + int(idx[4])] = mask[int(
                                 idx[1]):int(idx[1]) + int(idx[3])][int(idx[2]):int(idx[2]) + int(idx[4])] * 0.0

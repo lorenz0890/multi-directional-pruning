@@ -239,7 +239,7 @@ class PerformanceModel:
 
 
         sp_t = 1 - nonzero_i / total if total > 0 else 0
-        sp_c = 1 - 1 - c_nonzero_i / total_c if total_c > 0 else 0
+        sp_c = 1 - c_nonzero_i / total_c if total_c > 0 else 0
         sp_l = 1 - l_nonzero_i / total_l if total_l > 0 else 0
         sp_g = (1 - g_nonzero_i / total_g).numpy() if total_g > 0 else 0
 
