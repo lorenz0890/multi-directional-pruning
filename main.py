@@ -58,7 +58,7 @@ def main():
     #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/resnet18_cifar10_1011.ini')
 
     '''
-    config.load('configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche6/resnet50_cifar10.ini')
+    config.load('configs/ablation_study/re_pruning_ac/finished/lenet_mnist_1a.ini')
     experiment = experiment_factory.get_experiment(config)
     experiment.dispatch()
     '''
@@ -75,21 +75,21 @@ def main():
             #'configs/ablation_study/gd_top_k_mc_ac/',
             #'configs/ablation_study/gd_top_k_mc_ac_dk/'
             #'configs/ablation_study/gd_top_k_mc_ac_dk_admm_retrain/',
-            #'configs/ablation_study/re_pruning_ac_admm_intra/',
-            #'configs/ablation_study/re_pruning_ac_admm_retrain/',
-            #'configs/ablation_study/re_pruning_admm_intra/',
-            #'configs/ablation_study/re_pruning_admm_retrain',
+            'configs/ablation_study/re_pruning_ac_admm_intra/finished/',
+            'configs/ablation_study/re_pruning_ac_admm_retrain/finished/',
+            'configs/ablation_study/re_pruning_admm_intra/finished/',
+            'configs/ablation_study/re_pruning_admm_retrain/finished/',
             #'configs/ablation_study/alexnet_mixed/',
             #'configs/ablation_study/resnet18_mixed/',
             #'configs/ablation_study/resnet18_mixed2/',
             #'configs/ablation_study/resnet18_mixed3/',
-            #'configs/ablation_study/re_pruning_gd_top_k_mc_ac_dk_admm_intra/',
-            #'configs/ablation_study/re_pruning_gd_top_k_mc_ac_dk_admm_retrain/'
-            #'configs/ablation_study/re_pruning_ac/',
-            #'configs/ablation_study/re_pruning/',
+            'configs/ablation_study/re_pruning_gd_top_k_mc_ac_dk_admm_intra/finished/',
+            'configs/ablation_study/re_pruning_gd_top_k_mc_ac_dk_admm_retrain/finished/'
+            'configs/ablation_study/re_pruning_ac/finished/',
+            'configs/ablation_study/re_pruning/finished/',
             #'configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche1/',
             #'configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche2/',
-            'configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche3/',
+            #'configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche3/',
             #'configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche4/',
             #'configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche5/',
             #'configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche6/',

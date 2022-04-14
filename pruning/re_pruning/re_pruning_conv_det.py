@@ -97,7 +97,7 @@ class RePruningConvDet(RePruning):
             for i, (n, p) in enumerate(model.named_parameters()):
                 if p.grad is not None and not 'bias' in n and ('conv' in n or 'features' in n):
                     p.data = torch.where(torch.abs(p.data) > self.magnitude_threshold, p.data, torch.zeros_like(p.data))
-                    #if p.data.grad is not None:
-                    #    p.data.grad = torch.where(torch.abs(p.data.grad) > self.magnitude_threshold, p.data,
-                    #                              torch.zeros_like(p.data.grad))
+                    if p.data.grad is not None: # keep this or not?
+                        p.data.grad = torch.where(torch.abs(p.data.grad) > self.magnitude_threshold, p.data,
+                                                  torch.zeros_like(p.data.grad))
 
