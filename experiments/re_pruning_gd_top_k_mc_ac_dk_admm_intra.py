@@ -66,6 +66,7 @@ class REPruningMCGDTopKACDKADMMIntra:
         self.global_epochs = 0
 
     def dispatch(self):
+        self.performance_model.print_cuda_status()
         torch.manual_seed(self.config.get('OTHER', 'seed', int))
         optimizer = PruneAdam(self.model.named_parameters(), lr=self.config.get('SPECIFICATION', 'lr', float),
                               eps=self.config.get('SPECIFICATION', 'adam_eps', float))

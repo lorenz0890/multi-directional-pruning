@@ -73,6 +73,7 @@ class REPruningAC:
         # TODO make grad/weights pruning optional switches
         # TODO quantile instead of threshold and number of attempts? OK
     def dispatch(self):
+        self.performance_model.print_cuda_status()
         torch.manual_seed(self.config.get('OTHER', 'seed', int))
         self.__train()
         self.__test()

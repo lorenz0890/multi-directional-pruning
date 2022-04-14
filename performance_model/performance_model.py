@@ -246,6 +246,13 @@ class PerformanceModel:
         return flops_i * 1e-9, flops_i_base * 1e-9, sp_t, flops_i_fwd, \
                flops_i_base_fwd, flops_i_bwd, flops_i_base_bwd, sp_c, sp_l, sp_g
 
+    def print_cuda_status(self):
+        if torch.cuda.is_available() and torch.cuda.device_count() > 0:
+            print('CUDA available, device:', torch.cuda.current_device(), torch.cuda.get_device_name(torch.cuda.current_device()))
+        else:
+            print('CUDA not available or nor devices found')
+
+
     def print_memstats(self, batch_idx, interval):
         if batch_idx % interval == 0:
             device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

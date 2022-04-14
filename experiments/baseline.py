@@ -35,8 +35,9 @@ class Baseline:
         self.scheduler = MultiStepLR(self.optimizer, milestones=self.config.get('SPECIFICATION', 'steps',
                                                                            lambda a: [int(b) for b in str(a).split(',')]),
                                                                            gamma=config.get('SPECIFICATION', 'gamma', float))
-
+        self.performance_model = PerformanceModel(model, train_loader, config, logger=logger)
     def dispatch(self):
+        self.performance_model.print_cuda_status()
         torch.manual_seed(self.config.get('OTHER', 'seed', int))
         self.__train()
         self.__test()

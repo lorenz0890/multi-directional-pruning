@@ -89,7 +89,7 @@ def main():
             #'configs/ablation_study/re_pruning/',
             #'configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche1/',
             #'configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche2/',
-            #'configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche3/',
+            'configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche3/',
             #'configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche4/',
             #'configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche5/',
             #'configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche6/',
