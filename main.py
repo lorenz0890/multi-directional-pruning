@@ -58,7 +58,7 @@ def main():
     #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/resnet18_cifar10_1011.ini')
 
     '''
-    config.load('configs/ablation_study/re_pruning_ac/finished/lenet_mnist_1a.ini')
+    config.load('configs/ablation_study/re_pruning_ac/finished/lenet_mnist_11a.ini')
     experiment = experiment_factory.get_experiment(config)
     experiment.dispatch()
     '''
@@ -68,14 +68,15 @@ def main():
             #'configs/experiments/gd_top_k_mc_ac_dk/',
             #'configs/experiments/baseline/',
             #'configs/experiments/re_pruning/',
-            #'configs/ablation_study/admm_intra/',
-            #'configs/ablation_study/admm_retrain/'
-            #'configs/ablation_study/gd_top_k/',
-            #'configs/ablation_study/gd_top_k_mc/',
-            #'configs/ablation_study/gd_top_k_mc_ac/',
-            #'configs/ablation_study/gd_top_k_mc_ac_dk/'
-            #'configs/ablation_study/gd_top_k_mc_ac_dk_admm_retrain/',
-            #'configs/ablation_study/re_pruning_ac_admm_intra/finished/',
+            'configs/ablation_study/admm_intra/finished/',
+            'configs/ablation_study/admm_retrain/finished/',
+            'configs/ablation_study/gd_top_k/finished/',
+            'configs/ablation_study/gd_top_k_mc/finished/',
+            'configs/ablation_study/gd_top_k_mc_ac/finished/',
+            'configs/ablation_study/gd_top_k_mc_ac_dk/finished/',
+            'configs/ablation_study/gd_top_k_mc_ac_dk_admm_retrain/finished/',
+            'configs/ablation_study/gd_top_k_mc_ac_dk_admm_intra/finished/',
+            'configs/ablation_study/re_pruning_ac_admm_intra/finished/',
             #'configs/ablation_study/re_pruning_ac_admm_retrain/finished/',
             #'configs/ablation_study/re_pruning_admm_intra/finished/',
             #'configs/ablation_study/re_pruning_admm_retrain/finished/',
