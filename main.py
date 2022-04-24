@@ -58,7 +58,7 @@ def main():
     #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/resnet18_cifar10_1011.ini')
 
     '''
-    config.load('configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche8/vgg11_cifar10.ini')
+    config.load('configs/ablation_study/re_pruning_admm_retrain/lenet_mnist_26a.ini')
     experiment = experiment_factory.get_experiment(config)
     experiment.dispatch()
     '''
@@ -76,15 +76,15 @@ def main():
             #'configs/ablation_study/gd_top_k_mc_ac_dk/finished/',
             #'configs/ablation_study/gd_top_k_mc_ac_dk_admm_retrain/finished/',
             #'configs/ablation_study/gd_top_k_mc_ac_dk_admm_intra/finished/',
-            #'configs/ablation_study/re_pruning_ac_admm_intra/finished/',
-            #'configs/ablation_study/re_pruning_ac_admm_retrain/finished/',
-            #'configs/ablation_study/re_pruning_admm_intra/finished/',
-            #'configs/ablation_study/re_pruning_admm_retrain/finished/',
+            #'configs/ablation_study/re_pruning_ac_admm_intra/',
+            #'configs/ablation_study/re_pruning_ac_admm_retrain/',
+            #'configs/ablation_study/re_pruning_admm_intra/',
+            #'configs/ablation_study/re_pruning_admm_retrain/',
             #'configs/ablation_study/alexnet_mixed/',
             #'configs/ablation_study/resnet18_mixed/',
             #'configs/ablation_study/resnet18_mixed2/',
             #'configs/ablation_study/resnet18_mixed3/',
-            #'configs/ablation_study/re_pruning_gd_top_k_mc_ac_dk_admm_intra/finished/',
+            'configs/ablation_study/re_pruning_gd_top_k_mc_ac_dk_admm_intra/',
             #'configs/ablation_study/re_pruning_gd_top_k_mc_ac_dk_admm_retrain/finished/'
             #'configs/ablation_study/re_pruning_ac/finished/',
             #'configs/ablation_study/re_pruning/finished/',
