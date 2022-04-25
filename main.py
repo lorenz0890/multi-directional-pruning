@@ -40,7 +40,7 @@ def main():
 
     #config.load('configs/gd_top_k_mc_ac_dk/resnet_cifar10_2504.ini')
     #config.load('configs/gd_top_k_mc_ac_dk/resnet18_cifar10_1011.ini')
-    #config.load('configs/gd_top_k_mc_ac_dk/vgg13_cifar10_2.ini')
+    #config.load('configs/gd_top_k_mc_ac_dk/vgg16_cifar10_2.ini')
     #config.load('configs/gd_top_k_mc_ac_dk/mobilenet_v3_s_cifar10_1.ini')
 
     #config.load('configs/ablation_study/gd_top_k_mc_ac_dk_admm_intra/resnet_cifar10_2504.ini')
@@ -51,7 +51,7 @@ def main():
 
     #config.load('configs/ablation_study/re_pruning_ac/finished/resnet_cifar10_2504.ini')
 
-    #config.load('configs/baseline/vgg13_cifar10_2.ini')
+    #config.load('configs/baseline/vgg16_cifar10_2.ini')
     #config.load('configs/baseline/vgg8_bn_cifar10.ini')
     #config.load('configs/baseline/wrn16_8_cifar10.ini')
     #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/resnet_cifar10_2504.ini')
