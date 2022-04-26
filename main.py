@@ -40,7 +40,7 @@ def main():
 
     #config.load('configs/gd_top_k_mc_ac_dk/resnet_cifar10_2504.ini')
     #config.load('configs/gd_top_k_mc_ac_dk/resnet18_cifar10_1011.ini')
-    #config.load('configs/gd_top_k_mc_ac_dk/vgg16_cifar10_2.ini')
+    #config.load('configs/gd_top_k_mc_ac_dk/vgg16_cifar100_2.ini')
     #config.load('configs/gd_top_k_mc_ac_dk/mobilenet_v3_s_cifar10_1.ini')
 
     #config.load('configs/ablation_study/gd_top_k_mc_ac_dk_admm_intra/resnet_cifar10_2504.ini')
@@ -49,9 +49,9 @@ def main():
     #config.load('configs/ablation_study/re_pruning/excluded/resnet_cifar10_2504.ini')
     #config.load('configs/ablation_study/re_pruning/resnet18_cifar10_1011.ini')
 
-    #config.load('configs/ablation_study/re_pruning_ac/finished/resnet_cifar10_2504.ini')
+    #config.load('configs/ablation_study/re_pruning_ac/running/resnet_cifar10_2504.ini')
 
-    #config.load('configs/baseline/vgg16_cifar10_2.ini')
+    #config.load('configs/baseline/vgg16_cifar100_2.ini')
     #config.load('configs/baseline/vgg8_bn_cifar10.ini')
     #config.load('configs/baseline/wrn16_8_cifar10.ini')
     #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/resnet_cifar10_2504.ini')
@@ -68,14 +68,14 @@ def main():
             #'configs/experiments/gd_top_k_mc_ac_dk/',
             #'configs/experiments/baseline/',
             #'configs/experiments/re_pruning/',
-            #'configs/ablation_study/admm_intra/finished/',
-            #'configs/ablation_study/admm_retrain/finished/',
-            #'configs/ablation_study/gd_top_k/finished/',
-            #'configs/ablation_study/gd_top_k_mc/finished/',
-            #'configs/ablation_study/gd_top_k_mc_ac/finished/',
-            #'configs/ablation_study/gd_top_k_mc_ac_dk/finished/',
-            #'configs/ablation_study/gd_top_k_mc_ac_dk_admm_retrain/finished/',
-            #'configs/ablation_study/gd_top_k_mc_ac_dk_admm_intra/finished/',
+            #'configs/ablation_study/admm_intra/running/',
+            #'configs/ablation_study/admm_retrain/running/',
+            #'configs/ablation_study/gd_top_k/running/',
+            #'configs/ablation_study/gd_top_k_mc/running/',
+            #'configs/ablation_study/gd_top_k_mc_ac/running/',
+            #'configs/ablation_study/gd_top_k_mc_ac_dk/running/',
+            #'configs/ablation_study/gd_top_k_mc_ac_dk_admm_retrain/running/',
+            #'configs/ablation_study/gd_top_k_mc_ac_dk_admm_intra/running/',
             #'configs/ablation_study/re_pruning_ac_admm_intra/',
             #'configs/ablation_study/re_pruning_ac_admm_retrain/',
             #'configs/ablation_study/re_pruning_admm_intra/',
@@ -85,9 +85,9 @@ def main():
             #'configs/ablation_study/resnet18_mixed2/',
             #'configs/ablation_study/resnet18_mixed3/',
             'configs/ablation_study/re_pruning_gd_top_k_mc_ac_dk_admm_intra/',
-            #'configs/ablation_study/re_pruning_gd_top_k_mc_ac_dk_admm_retrain/finished/'
-            #'configs/ablation_study/re_pruning_ac/finished/',
-            #'configs/ablation_study/re_pruning/finished/',
+            #'configs/ablation_study/re_pruning_gd_top_k_mc_ac_dk_admm_retrain/running/'
+            #'configs/ablation_study/re_pruning_ac/running/',
+            #'configs/ablation_study/re_pruning/running/',
             #'configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche1/',
             #'configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche2/',
             #'configs/experiments/re_pruning_gd_top_k_mc_ac_dk_admm_intra/tranche3/',
