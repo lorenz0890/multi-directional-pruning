@@ -3,7 +3,7 @@ import torch
 
 from experiments import ADMMRetrain, ADMMIntra, GDTopK, MCGDTopK, MCGDTopKACDK, MCGDTopKAC, Baseline, \
     MCGDTopKACDKADMMIntra, REPruningMCGDTopKACDKADMMIntra, REPruningAC, MCGDTopKACDKADMMRetrain, REPruningADMMIntra, \
-    REPruningACADMMIntra, REPruningACADMMRetrain, REPruningMCGDTopKACDKADMMRetrain
+    REPruningACADMMIntra, REPruningACADMMRetrain, REPruningMCGDTopKACDKADMMRetrain, REPruningMCGDTopKACDK
 from experiments import REPruning
 from experiments.re_pruning_admm_retrain import REPruningADMMRetrain
 from utils import DataFactory, ModelFactory
@@ -55,4 +55,6 @@ class ExperimentFactory:
             experiment = REPruningMCGDTopKACDKADMMIntra(model, train_loader, test_loader, config, logger, visualization)
         if config.get('EXPERIMENT', 'name', str) == 're_pruning_gd_top_k_mc_ac_dk_admm_retrain':
             experiment = REPruningMCGDTopKACDKADMMRetrain(model, train_loader, test_loader, config, logger, visualization)
+        if config.get('EXPERIMENT', 'name', str) == 're_pruning_gd_top_k_mc_ac_dk':
+            experiment = REPruningMCGDTopKACDK(model, train_loader, test_loader, config, logger, visualization)
         return experiment

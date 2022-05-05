@@ -35,7 +35,7 @@ class REPruningMCGDTopKACDKADMMIntra:
         self.kwargs = {'num_workers': 1, 'pin_memory': True} if self.use_cuda else {}
         self.device = torch.device("cuda" if self.use_cuda else "cpu")
         self.performance_model = PerformanceModel(model, train_loader, config,
-                                                  overhead_gd_top_k_mc=True, overhead_re_pruning=True, logger=logger)
+                                                  overhead_gd_top_k_mc=True, overhead_re_pruning=True, overhead_admm=True, logger=logger)
         self.gradient_diversity = MonteCarloGDTopKGradients(config.get('SPECIFICATION', 'lb', int),
                                                             config.get('SPECIFICATION', 'k', int),
                                                             config.get('SPECIFICATION', 'se', int), model)
