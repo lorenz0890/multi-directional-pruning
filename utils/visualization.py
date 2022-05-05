@@ -139,9 +139,9 @@ class Visualization:
 
     def visualize_model(self, model):
         sns.set(rc={'figure.figsize':(11.7,5.27)})
-        for k, (n, p) in enumerate(model.named_parameters()):
-            if 'bias' not in n:
-                print(n, p.shape)
+        for k, (name, p) in enumerate(model.named_parameters()):
+            if 'bias' not in name:
+                print(name, p.shape)
                 id = re.search(r'\d+', name.split('_')[-1]).group()
                 type = 'layer'
                 if 'conv' in name or 'features' in name:
@@ -151,9 +151,10 @@ class Visualization:
                 name = (type + id).capitalize()
                 if len(p.shape) == 2:
                     plt.matshow(p.detach().numpy())
+                    plt.axis('off')
                     plt.grid(None)
                     plt.title('{} {} Tensor'.format(self.config['EXPERIMENT']['model'].capitalize(), name))
-                    plt.savefig(self.path+self.__make_name())
+                    plt.savefig(self.path+self.__make_name(tag=name))
                 if len(p.shape) == 4:
                     fig, ax = plt.subplots(ncols = p.shape[0], nrows = p.shape[1],
                                      sharex=True, sharey=True, tight_layout=False, squeeze=False)
@@ -162,13 +163,14 @@ class Visualization:
                         for j in range(p.shape[1]):
                             ax[j][i].autoscale()
                             ax[j][i].matshow(img[i][j])#.imshow(img)
-                            ax[j][i].tick_params(axis='both', which='major', labelsize=10)
-                            ax[j][i].tick_params(axis='both', which='minor', labelsize=8)
-                            ax[j][i].set_xticks([0,1,2,3,4])
-                            ax[j][i].set_yticks([0,1,2,3,4])
+                            #ax[j][i].tick_params(axis='both', which='major', labelsize=10)
+                            #ax[j][i].tick_params(axis='both', which='minor', labelsize=8)
+                            #ax[j][i].set_xticks([0,1,2,3,4])
+                            #ax[j][i].set_yticks([0,1,2,3,4])
                             ax[j][i].grid(None)
+                            ax[j][i].axis('off')
 
                     fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.1, hspace=0.1)
-                    plt.title('{} {} Tensor'.format(self.config['EXPERIMENT']['model'].capitalize(), name))
-                    plt.savefig(self.path+self.__make_name())
+                    #plt.title('{} {} Tensor'.format(self.config['EXPERIMENT']['model'].capitalize(), name))
+                    plt.savefig(self.path+self.__make_name(tag=name))
                     plt.clf()
