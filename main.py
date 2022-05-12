@@ -58,7 +58,7 @@ def main():
     #config.load('configs/re_pruning_gd_top_k_mc_ac_dk_admm_intra/resnet18_cifar10_1011.ini')
 
     '''
-    config.load('configs/ablation_study/re_pruning_gd_top_k_mc_ac_dk/lenet_mnist_1.ini')
+    config.load('configs/ablation_study/re_pruning_gd_top_k_mc_ac_dk/alexnet_cifar10_991.ini')
     experiment = experiment_factory.get_experiment(config)
     experiment.dispatch()
     '''

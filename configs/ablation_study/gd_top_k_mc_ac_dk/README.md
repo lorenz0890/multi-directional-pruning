@@ -1,1 +1,0 @@
-effects of sampling epoch and initial k
