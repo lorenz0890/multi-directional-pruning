@@ -1,5 +1,5 @@
 import torch
-from abc import ABC
+
 
 class GradientDiversity:
     def __init__(self, lb):
@@ -9,8 +9,8 @@ class GradientDiversity:
         self.accum_g = {}
 
     def update_lgd(self):
-        for n in self.accum_g :
-            self.layer_gd[n] = self.lb / torch.pow(torch.norm(self.accum_g [n]), 2)
+        for n in self.accum_g:
+            self.layer_gd[n] = self.lb / torch.pow(torch.norm(self.accum_g[n]), 2)
 
     def update_ggd(self):
         self.global_gd = 0
@@ -18,15 +18,15 @@ class GradientDiversity:
             self.global_gd += self.layer_gd[n]
 
     def update_gd(self, idx):
-        if (idx+1) % self.lb == 0:
+        if (idx + 1) % self.lb == 0:
             self.update_lgd()
             self.update_ggd()
-            #self.reset_accum_grads()
+            # self.reset_accum_grads()
 
     def norm_grads(self, model):
         for i, (n, p) in enumerate(model.named_parameters()):
             if p.grad is not None:
-                p.grad.data = p.grad.data / torch.norm(p.grad.data) # replace by grad clipping?
+                p.grad.data = p.grad.data / torch.norm(p.grad.data)  # replace by grad clipping?
 
     def accum_grads(self, model):
         for i, (n, p) in enumerate(model.named_parameters()):
@@ -36,6 +36,6 @@ class GradientDiversity:
                 else:
                     self.accum_g[n] += p.grad
 
-    def reset_accum_grads(self, idx = 1):
-        if (idx+1) % self.lb == 0:
+    def reset_accum_grads(self, idx=1):
+        if (idx + 1) % self.lb == 0:
             self.accum_g = {}

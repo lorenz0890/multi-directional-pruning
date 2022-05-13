@@ -1,26 +1,20 @@
 from __future__ import print_function
-import argparse
-import gc
+
 import random
 
 import torch
 import torch.nn.functional as F
-from torch.optim import Adam, SGD
+from torch.optim import SGD
 from torch.optim.lr_scheduler import MultiStepLR
-
-from pruning import GradientDiversity, GradientDiversityTopKGradients, MonteCarloGDTopKGradients, RePruningConvDet, \
-    RePruningLinearDet
-from optimizer import PruneAdam
-from model import LeNet, AlexNet
-from performance_model import PerformanceModel
-from utils import regularized_nll_loss, admm_loss, \
-    initialize_Z_and_U, update_X, update_Z, update_Z_l1, update_U, \
-    print_convergence, print_prune, apply_prune, apply_l1_prune
-from torchvision import datasets, transforms
 from tqdm import tqdm
 
+from performance_model import PerformanceModel
+from pruning import GradientDiversity, MonteCarloGDTopKGradients, RePruningConvDet, \
+    RePruningLinearDet
+
+
 class REPruningMCGDTopKACDK:
-    def __init__(self, model, train_loader, test_loader, config, logger, visualization = None):
+    def __init__(self, model, train_loader, test_loader, config, logger, visualization=None):
         self.model = model
         self.train_loader = train_loader
         self.test_loader = test_loader
@@ -30,9 +24,13 @@ class REPruningMCGDTopKACDK:
         self.device = torch.device("cuda" if self.use_cuda else "cpu")
         self.logger = logger
         self.visualization = visualization
-        self.performance_model = PerformanceModel(model, train_loader, config, overhead_re_pruning=True, overhead_gd_top_k_mc=True, logger=logger)
-        self.gradient_diversity = MonteCarloGDTopKGradients(config.get('SPECIFICATION', 'lb', int), config.get('SPECIFICATION', 'k', int),config.get('SPECIFICATION', 'se', int) , model)
-        self.gradient_diversity_only = GradientDiversity(config.get('SPECIFICATION', 'lb', int))  # Only required for G Norm & Accum functionality
+        self.performance_model = PerformanceModel(model, train_loader, config, overhead_re_pruning=True,
+                                                  overhead_gd_top_k_mc=True, logger=logger)
+        self.gradient_diversity = MonteCarloGDTopKGradients(config.get('SPECIFICATION', 'lb', int),
+                                                            config.get('SPECIFICATION', 'k', int),
+                                                            config.get('SPECIFICATION', 'se', int), model)
+        self.gradient_diversity_only = GradientDiversity(
+            config.get('SPECIFICATION', 'lb', int))  # Only required for G Norm & Accum functionality
         self.conv_pruning = RePruningConvDet(self.config.get('SPECIFICATION', 'softness_c', float),
                                              self.config.get('SPECIFICATION', 'magnitude_t_c', float),
                                              self.config.get('SPECIFICATION', 'metric_q_c', float),
@@ -59,13 +57,13 @@ class REPruningMCGDTopKACDK:
     def dispatch(self):
         self.performance_model.print_cuda_status()
         torch.manual_seed(self.config.get('OTHER', 'seed', int))
-        #optimizer = Adam(self.model.parameters(), lr=self.config.get('SPECIFICATION', 'lr', float),
+        # optimizer = Adam(self.model.parameters(), lr=self.config.get('SPECIFICATION', 'lr', float),
         #                      eps=self.config.get('SPECIFICATION', 'adam_eps', float))
         optimizer = SGD(self.model.parameters(), lr=self.config.get('SPECIFICATION', 'lr', float),
-                             weight_decay=0.0)
+                        weight_decay=0.0)
         self.scheduler = MultiStepLR(optimizer, milestones=self.config.get('SPECIFICATION', 'steps',
-                                                                                lambda a: [int(b) for b in
-                                                                                           str(a).split(',')]),
+                                                                           lambda a: [int(b) for b in
+                                                                                      str(a).split(',')]),
                                      gamma=self.config.get('SPECIFICATION', 'gamma', float))
         self.__train(self.config, self.model, self.device, self.train_loader, self.test_loader, optimizer)
         self.__test(self.config, self.model, self.device, self.test_loader)
@@ -76,9 +74,11 @@ class REPruningMCGDTopKACDK:
         if self.config.get('OTHER', 'vis_model', bool): self.visualization.visualize_model(self.model)
         if self.config.get('OTHER', 'vis_log', bool):
             self.visualization.visualize_perfstats(self.logger)
-            self.visualization.visualize_key_list(self.logger, ['top_k', 'accumulation', 'test_accuracy', 'test_loss', 'train_loss'])
+            self.visualization.visualize_key_list(self.logger,
+                                                  ['top_k', 'accumulation', 'test_accuracy', 'test_loss', 'train_loss'])
         if self.config.get('OTHER', 'save_model', bool): torch.save(self.model.state_dict(),
                                                                     self.config.get('OTHER', 'out_path', str))
+
     def __train(self, config, model, device, train_loader, test_loader, optimizer):
         for epoch in range(config.get('SPECIFICATION', 'epochs', int)):
             print('Epoch: {}'.format(epoch + 1))
@@ -154,10 +154,10 @@ class REPruningMCGDTopKACDK:
         correct = 0
         with torch.no_grad():
             for data, target in test_loader:
-                data, target = data, target# data.to(device), target.to(device)
+                data, target = data, target  # data.to(device), target.to(device)
                 output = model(data)
-                test_loss += F.nll_loss(output, target, reduction='sum').item() # sum up batch loss
-                pred = output.argmax(dim=1, keepdim=True) # get the index of the max log-probability
+                test_loss += F.nll_loss(output, target, reduction='sum').item()  # sum up batch loss
+                pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
                 correct += pred.eq(target.view_as(pred)).sum().item()
 
         test_loss /= len(test_loader.dataset)

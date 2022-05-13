@@ -1,22 +1,13 @@
 from __future__ import print_function
-import argparse
-import copy
 
 import torch
 import torch.nn.functional as F
-from torch.optim import Adam, SGD
+from torch.optim import SGD
 from torch.optim.lr_scheduler import MultiStepLR
-
-from pruning import GradientDiversity, GradientDiversityTopKGradients, RePruningLinearDet
-from pruning import RePruningConvDet
-from optimizer import PruneAdam
-from model import LeNet, AlexNet
-from performance_model import PerformanceModel
-from utils import regularized_nll_loss, admm_loss, \
-    initialize_Z_and_U, update_X, update_Z, update_Z_l1, update_U, \
-    print_convergence, print_prune, apply_prune, apply_l1_prune
-from torchvision import datasets, transforms
 from tqdm import tqdm
+
+from performance_model import PerformanceModel
+from pruning import GradientDiversityTopKGradients
 
 
 class Baseline:
@@ -31,11 +22,14 @@ class Baseline:
         self.gradient_diversity = GradientDiversityTopKGradients(1, 1)  # Only required for gradient normalization
         self.logger = logger
         self.visualization = visualization
-        self.optimizer = SGD(self.model.parameters(), lr=self.config.get('SPECIFICATION', 'lr', float), weight_decay=0.0)
+        self.optimizer = SGD(self.model.parameters(), lr=self.config.get('SPECIFICATION', 'lr', float),
+                             weight_decay=0.0)
         self.scheduler = MultiStepLR(self.optimizer, milestones=self.config.get('SPECIFICATION', 'steps',
-                                                                           lambda a: [int(b) for b in str(a).split(',')]),
-                                                                           gamma=config.get('SPECIFICATION', 'gamma', float))
+                                                                                lambda a: [int(b) for b in
+                                                                                           str(a).split(',')]),
+                                     gamma=config.get('SPECIFICATION', 'gamma', float))
         self.performance_model = PerformanceModel(model, train_loader, config, logger=logger)
+
     def dispatch(self):
         self.performance_model.print_cuda_status()
         torch.manual_seed(self.config.get('OTHER', 'seed', int))
@@ -60,7 +54,8 @@ class Baseline:
                 loss = F.nll_loss(output, target, reduction='sum')
                 l1 = sum(p.abs().sum() for p in self.model.parameters())
                 l2 = sum(p.norm() for p in self.model.parameters())
-                loss += self.config.get('SPECIFICATION', 'l1', float) * l1 +self. config.get('SPECIFICATION', 'l1', float) * l2
+                loss += self.config.get('SPECIFICATION', 'l1', float) * l1 + self.config.get('SPECIFICATION', 'l1',
+                                                                                             float) * l2
                 loss.backward()
                 self.gradient_diversity.norm_grads(self.model)
                 self.logger.log('train_loss', loss.item())

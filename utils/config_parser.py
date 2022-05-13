@@ -29,16 +29,14 @@ class Parser:
         print(self.get('OTHER', 'out_path', str), flush=True)
 
     def get_raw(self):
-        return {s:dict(self.config.items(s)) for s in self.config.sections()}
+        return {s: dict(self.config.items(s)) for s in self.config.sections()}
 
     def get(self, section, key, dtype):
         if self.loaded:
-            if dtype != bool or key == 'no_cuda': # TODO Workaround, permanent fix required
+            if dtype != bool or key == 'no_cuda':  # TODO Workaround, permanent fix required
                 return dtype(self.config[section][key])
             elif dtype == bool:
                 return bool(strtobool(self.config[section][key]))
 
         else:
             raise Exception('No config loaded')
-
-

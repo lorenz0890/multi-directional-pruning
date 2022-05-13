@@ -1,6 +1,5 @@
-import torch
-
 from pruning import GradientDiversity
+
 
 class GradientDiversityTopKGradients(GradientDiversity):
     def __init__(self, lb, k):
@@ -9,7 +8,7 @@ class GradientDiversityTopKGradients(GradientDiversity):
         self.k = k
 
     def select_delete_grads(self, idx):
-        if (idx+1) % self.lb == 0:
+        if (idx + 1) % self.lb == 0:
             self.delete_g = []
             lgd_cpy = self.layer_gd.copy()
             for i in range(0, self.k):

@@ -1,20 +1,17 @@
 from __future__ import print_function
-import argparse
+
 import torch
 import torch.nn.functional as F
+from tqdm import tqdm
+
 from optimizer import PruneAdam
-from model import LeNet, AlexNet
 from performance_model import PerformanceModel
-from pruning import MonteCarloGDTopKGradients
+from pruning import GradientDiversity, RePruningLinearDet
+from pruning import RePruningConvDet
 from utils import regularized_nll_loss, admm_loss, \
     initialize_Z_and_U, update_X, update_Z, update_Z_l1, update_U, \
     print_convergence, print_prune, apply_prune, apply_l1_prune
-from torchvision import datasets, transforms
-from tqdm import tqdm
-import random
 
-from pruning import GradientDiversity, GradientDiversityTopKGradients, RePruningLinearDet
-from pruning import RePruningConvDet
 
 class REPruningADMMRetrain:
     def __init__(self, model, train_loader, test_loader, config, logger, visualization=None):
@@ -37,7 +34,8 @@ class REPruningADMMRetrain:
         self.performance_model = PerformanceModel(model, train_loader, config,
                                                   overhead_admm=True, overhead_re_pruning=True, logger=logger)
 
-        self.gradient_diversity_only = GradientDiversity(config.get('SPECIFICATION', 'lb', int))  # Only required for G Norm & Accum functionality
+        self.gradient_diversity_only = GradientDiversity(
+            config.get('SPECIFICATION', 'lb', int))  # Only required for G Norm & Accum functionality
         self.conv_pruning = RePruningConvDet(self.config.get('SPECIFICATION', 'softness_c', float),
                                              self.config.get('SPECIFICATION', 'magnitude_t_c', float),
                                              self.config.get('SPECIFICATION', 'metric_q_c', float),
@@ -61,9 +59,10 @@ class REPruningADMMRetrain:
         optimizer = PruneAdam(self.model.named_parameters(), lr=self.config.get('SPECIFICATION', 'lr', float),
                               eps=self.config.get('SPECIFICATION', 'adam_eps', float))
 
-
         self.__train(self.config, self.model, self.device, self.train_loader, self.test_loader, optimizer)
-        mask = apply_l1_prune(self.model, self.device, self.config) if self.config.get('SPECIFICATION', 'l1', bool) else apply_prune(self.model, self.device, self.config)
+        mask = apply_l1_prune(self.model, self.device, self.config) if self.config.get('SPECIFICATION', 'l1',
+                                                                                       bool) else apply_prune(
+            self.model, self.device, self.config)
         print_prune(self.model)
         self.__test(self.config, self.model, self.device, self.test_loader)
         self.__retrain(self.config, self.model, mask, self.device, self.train_loader, self.test_loader, optimizer)
@@ -78,7 +77,7 @@ class REPruningADMMRetrain:
 
     def __train(self, config, model, device, train_loader, test_loader, optimizer):
         for epoch in range(config.get('SPECIFICATION', 'pre_epochs', int)):
-            print('Pre epoch: {}'.format(epoch + 1), 'Total epoch: {}'.format(self.global_epochs+1))
+            print('Pre epoch: {}'.format(epoch + 1), 'Total epoch: {}'.format(self.global_epochs + 1))
             model.train()
             for batch_idx, (data, target) in enumerate(tqdm(train_loader)):
                 data, target = data.to(device), target.to(device)
@@ -93,7 +92,7 @@ class REPruningADMMRetrain:
                     self.gradient_diversity_only.update_gd(batch_idx)
                     self.conv_pruning.compute_mask(self.model, self.gradient_diversity_only.accum_g, batch_idx)
                     self.linear_pruning.compute_mask(self.model, self.gradient_diversity_only.accum_g, batch_idx)
-                    #self.gradient_diversity_only.reset_accum_grads() # clears accumulated grads
+                    # self.gradient_diversity_only.reset_accum_grads() # clears accumulated grads
                     self.conv_pruning.apply_mask(self.model)
                     self.linear_pruning.apply_mask(self.model)
                 if self.global_epochs > self.config.get('SPECIFICATION', 'prune_epochs', int):
@@ -129,7 +128,7 @@ class REPruningADMMRetrain:
                     self.gradient_diversity_only.update_gd(batch_idx)
                     self.conv_pruning.compute_mask(self.model, self.gradient_diversity_only.accum_g, batch_idx)
                     self.linear_pruning.compute_mask(self.model, self.gradient_diversity_only.accum_g, batch_idx)
-                    #self.gradient_diversity_only.reset_accum_grads() # clears accumulated grads
+                    # self.gradient_diversity_only.reset_accum_grads() # clears accumulated grads
                     self.conv_pruning.apply_mask(self.model)
                     self.linear_pruning.apply_mask(self.model)
                 if self.global_epochs > self.config.get('SPECIFICATION', 'prune_epochs', int):
@@ -161,8 +160,8 @@ class REPruningADMMRetrain:
             for data, target in test_loader:
                 data, target = data.to(device), target.to(device)
                 output = model(data)
-                test_loss += F.nll_loss(output, target, reduction='sum').item() # sum up batch loss
-                pred = output.argmax(dim=1, keepdim=True) # get the index of the max log-probability
+                test_loss += F.nll_loss(output, target, reduction='sum').item()  # sum up batch loss
+                pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
                 correct += pred.eq(target.view_as(pred)).sum().item()
 
         test_loss /= len(test_loader.dataset)
@@ -174,7 +173,7 @@ class REPruningADMMRetrain:
 
     def __retrain(self, config, model, mask, device, train_loader, test_loader, optimizer):
         for epoch in range(config.get('SPECIFICATION', 'pre_epochs', int)):
-            print('Re epoch: {}'.format(epoch + 1), 'Total epoch: {}'.format(self.global_epochs+1))
+            print('Re epoch: {}'.format(epoch + 1), 'Total epoch: {}'.format(self.global_epochs + 1))
             model.train()
             for batch_idx, (data, target) in enumerate(tqdm(train_loader)):
                 data, target = data.to(device), target.to(device)
@@ -189,7 +188,7 @@ class REPruningADMMRetrain:
                     self.gradient_diversity_only.update_gd(batch_idx)
                     self.conv_pruning.compute_mask(self.model, self.gradient_diversity_only.accum_g, batch_idx)
                     self.linear_pruning.compute_mask(self.model, self.gradient_diversity_only.accum_g, batch_idx)
-                    #self.gradient_diversity_only.reset_accum_grads() # clears accumulated grads
+                    # self.gradient_diversity_only.reset_accum_grads() # clears accumulated grads
                     self.conv_pruning.apply_mask(self.model)
                     self.linear_pruning.apply_mask(self.model)
                 if self.global_epochs > self.config.get('SPECIFICATION', 'prune_epochs', int):
