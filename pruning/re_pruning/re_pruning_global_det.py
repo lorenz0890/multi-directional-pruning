@@ -5,6 +5,7 @@ from pruning import RePruning
 
 
 class RePruningGlobalDet(RePruning):
+    #DEPRECATED
     def __init__(self, softness, magnitude_threshold, metric_quantile, lr, sample, lb, scale):
         super().__init__()
         self.masks = {}

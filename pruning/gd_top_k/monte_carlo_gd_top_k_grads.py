@@ -52,7 +52,7 @@ class MonteCarloGDTopKGradients(GradientDiversity):
         self.cat.probs = torch.Tensor(list(self.probabilities.values()))
 
     def __select_delete_grads_probabilistic(self):
-        self.del_g = list(set([self.names[self.cat.sample()] for i in range(self.k)]))
+        self.delete_g = list(set([self.names[self.cat.sample()] for i in range(self.k)]))#del_g
 
     def update_epoch(self, epoch):
         self.epoch = epoch

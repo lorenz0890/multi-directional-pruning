@@ -1,6 +1,7 @@
 from .alexnet_s import AlexNet_S
 from .alexnet import AlexNet
 from .lenet import LeNet
+from .leneta import LeNetA
 from .vgg16 import VGG16
 from .vgg11 import VGG11
 from .vgg13 import VGG13

@@ -28,20 +28,22 @@ class RePruningLinearDet(RePruning):
                                 W = p
                                 G = acm_g[n]
                                 W0 = W - self.lr * G
-                                W = W / torch.norm(W) #TODO normalizaing this nto in performance model
+                                W = W / torch.norm(W)
                                 W0 = W0 / torch.norm(W0)
                                 sz_k = np.random.randint(int(p.shape[0] * self.scale) + 1, p.shape[0] + 1)
                                 sz_j = np.random.randint(int(p.shape[1] * self.scale) + 1, p.shape[1] + 1)
                                 for k in range(0, p.shape[0] - sz_k, sz_k):
                                     for j in range(0, p.shape[1] - sz_j, sz_j):
-                                        if not "{}:{}:{}:{}:{}".format(n, k, j, sz_k, sz_j) in self.metrics:
-                                            norm_w = torch.norm(W[k:k + sz_k, j + sz_j])
-                                            if norm_w != 0:
-                                                norm_w0 = torch.norm(W0[k:k + sz_k, j:j + sz_j])
-                                                metric = norm_w / norm_w0
-                                                self.metrics["{}:{}:{}:{}:{}".format(n, k, j, sz_k, sz_j)] = metric.item()
-                                            else:
-                                                self.metrics["{}:{}:{}:{}:{}".format(n, k, j, sz_k, sz_j)] = float('inf')
+                                        nz_w = W[k:k + sz_k, j + sz_j].count_nonzero() # cheap in sparse tensor format
+                                        nz_w0 = W0[k:k + sz_k, j + sz_j].count_nonzero()
+                                        if not "{}:{}:{}:{}:{}".format(n, k, j, sz_k, sz_j) in self.metrics and (nz_w + nz_w0)>=1:
+                                                norm_w = torch.norm(W[k:k + sz_k, j + sz_j]) if nz_w >= 1 else 0
+                                                if norm_w != 0:
+                                                    norm_w0 = torch.norm(W0[k:k + sz_k, j:j + sz_j]) if nz_w0 >= 1 else 0
+                                                    metric = (norm_w / norm_w0).item() if norm_w0 > 0 else float('inf')
+                                                    self.metrics["{}:{}:{}:{}:{}".format(n, k, j, sz_k, sz_j)] = metric
+                                                else:
+                                                    self.metrics["{}:{}:{}:{}:{}".format(n, k, j, sz_k, sz_j)] = float('inf')
 
                 metric_vals = list(self.metrics.values())
                 if len(metric_vals) > 0:
@@ -89,7 +91,7 @@ class RePruningLinearDet(RePruning):
             for i, (n, p) in enumerate(model.named_parameters()):
                 if p.grad is not None and not 'bias' in n and ('fc' in n or 'classifier' in n):
                     p.data = torch.where(torch.abs(p.data) > self.magnitude_threshold, p.data, torch.zeros_like(p.data))
-                    if p.data.grad is not None:
-                        p.data.grad = torch.where(torch.abs(p.data.grad) > self.magnitude_threshold, p.data,
-                                                  torch.zeros_like(p.data.grad))
+                    if p.grad.data is not None:
+                        p.grad.data = torch.where(torch.abs(p.grad.data) > self.magnitude_threshold, p.grad.data,
+                                                  torch.zeros_like(p.grad.data))
 

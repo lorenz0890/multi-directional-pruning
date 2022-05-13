@@ -29,27 +29,31 @@ class RePruningConvDet(RePruning):
                                 W0 = W - self.lr * G
                                 W = W / torch.norm(W)
                                 W0 = W0 / torch.norm(W0)
-                                sz_k = np.random.randint(int(p.shape[0] * self.scale)+1, p.shape[0]+1) #TODO ensure we can reach every filter
+                                sz_k = np.random.randint(int(p.shape[0] * self.scale)+1, p.shape[0]+1)
                                 sz_j = np.random.randint(int(p.shape[1] * self.scale)+1, p.shape[1]+1)
                                 for key in range(0, p.shape[0]-sz_k, sz_k):
                                     if p.shape[1] == 1:
                                         j = 0
-                                        if not "{}:{}:{}:{}:{}".format(n, key, j, sz_k, sz_j) in self.metrics:
-                                            norm_w = torch.norm(W[key:key+sz_k, j, :, :])
+                                        nz_w = W[key:key + sz_k, j, :, :].count_nonzero()  # cheap in sparse tensor format
+                                        nz_w0 = W0[key:key + sz_k, j, :, :].count_nonzero()
+                                        if not "{}:{}:{}:{}:{}".format(n, key, j, sz_k, sz_j) in self.metrics and (nz_w + nz_w0)>=1:
+                                            norm_w = torch.norm(W[key:key+sz_k, j, :, :]) if nz_w >= 1 else 0
                                             if norm_w != 0:
-                                                norm_w0 = torch.norm(W0[key:key + sz_k, j, :, :])
-                                                metric = norm_w / norm_w0
-                                                self.metrics["{}:{}:{}:{}:{}".format(n, key, j, sz_k, sz_j)] = metric.item()
+                                                norm_w0 = torch.norm(W0[key:key + sz_k, j, :, :]) if nz_w0 >= 1 else 0
+                                                metric = (norm_w / norm_w0).item() if norm_w0 > 0 else float('inf')
+                                                self.metrics["{}:{}:{}:{}:{}".format(n, key, j, sz_k, sz_j)] = metric
                                             else:
                                                 self.metrics["{}:{}:{}:{}:{}".format(n, key, j, sz_k, sz_j)] = float('inf')
                                     else:
                                         for j in range(0, p.shape[1]-sz_j, sz_j):
-                                            if not "{}:{}:{}:{}:{}".format(n, key, j, sz_k, sz_j) in self.metrics:
-                                                norm_w = torch.norm(W[key:key+sz_k, j+sz_j, :, :])
+                                            nz_w = W[key:key + sz_k, j + sz_j, :, :].count_nonzero()  # cheap in sparse tensor format
+                                            nz_w0 = W0[key:key + sz_k, j + sz_j, :, :].count_nonzero()
+                                            if not "{}:{}:{}:{}:{}".format(n, key, j, sz_k, sz_j) in self.metrics and (nz_w + nz_w0)>=1:
+                                                norm_w = torch.norm(W[key:key+sz_k, j+sz_j, :, :]) if nz_w >= 1 else 0
                                                 if norm_w != 0:
-                                                    norm_w0 = torch.norm(W0[key:key + sz_k, j:j + sz_j, :, :])
-                                                    metric = norm_w / norm_w0
-                                                    self.metrics["{}:{}:{}:{}:{}".format(n, key, j, sz_k, sz_j)] = metric.item()
+                                                    norm_w0 = torch.norm(W0[key:key + sz_k, j:j + sz_j, :, :]) if nz_w0 >= 1 else 0
+                                                    metric = (norm_w / norm_w0).item() if norm_w0 > 0 else float('inf')
+                                                    self.metrics["{}:{}:{}:{}:{}".format(n, key, j, sz_k, sz_j)] = metric
                                                 else:
                                                     self.metrics["{}:{}:{}:{}:{}".format(n, key, j, sz_k, sz_j)] = float('inf')
 
@@ -97,7 +101,8 @@ class RePruningConvDet(RePruning):
             for i, (n, p) in enumerate(model.named_parameters()):
                 if p.grad is not None and not 'bias' in n and ('conv' in n or 'features' in n):
                     p.data = torch.where(torch.abs(p.data) > self.magnitude_threshold, p.data, torch.zeros_like(p.data))
-                    if p.data.grad is not None: # keep this or not?
-                        p.data.grad = torch.where(torch.abs(p.data.grad) > self.magnitude_threshold, p.data,
-                                                  torch.zeros_like(p.data.grad))
+                    #print(n, p.data.grad is None, p.grad.data is None, flush=True)
+                    if p.grad.data is not None: # keep this or not?
+                        p.grad.data = torch.where(torch.abs(p.grad.data) > self.magnitude_threshold, p.grad.data,
+                                                  torch.zeros_like(p.grad.data))
 
