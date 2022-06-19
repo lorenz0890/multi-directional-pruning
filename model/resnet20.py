@@ -1,7 +1,5 @@
-import torch
-import torchvision.models
-import torch.nn.functional as F
 import torch.nn as nn
+
 from .resnet import resnet20
 
 

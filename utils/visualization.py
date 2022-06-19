@@ -1,10 +1,10 @@
 import os
+import re
 from datetime import datetime
 
 import numpy as np
 import seaborn as sns
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-import re
 
 sns.set()
 from matplotlib import pyplot as plt

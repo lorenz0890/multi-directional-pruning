@@ -1,6 +1,8 @@
+from typing import Union, List, Dict, Any, cast
+
 import torch
 import torch.nn as nn
-from typing import Union, List, Dict, Any, cast
+
 
 
 # Adapted from https://github.com/HobbitLong/RepDistiller/blob/master/models/vgg.py

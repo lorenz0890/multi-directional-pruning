@@ -2,8 +2,6 @@ import json
 import os
 from datetime import datetime
 
-import torch
-
 
 class Logger:
     def __init__(self, config, path=None):

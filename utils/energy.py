@@ -6,27 +6,18 @@ Date:   02.12.17
 Source:https://gist.github.com/Rahim16/2591a3c837456afb05e353dd8e880800#file-measure_energy-py
 """
 
-from multiprocessing import Process, Pipe
-from pynvml import *
 import argparse
-import os
-import json
-import numpy as np
-from tqdm import tqdm
-import pandas as pd
-import torch
-from torch.autograd import Variable
-import torch.nn.functional as F
-import torchnet as tnt
-import torch.backends.cudnn as cudnn
-from nested_dict import nested_dict
-from collections import OrderedDict
 import datetime
-import time
-from datetime import timedelta
-import shape as sh
+import json
+import os
 from ast import literal_eval
-import pickle
+from multiprocessing import Process, Pipe
+
+import numpy as np
+import torch
+import torch.backends.cudnn as cudnn
+from pynvml import *
+from torch.autograd import Variable
 
 cudnn.benchmark = True
 

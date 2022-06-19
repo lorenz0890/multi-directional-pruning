@@ -1,23 +1,17 @@
 from __future__ import print_function
-import argparse
-import gc
+
 import random
 
 import torch
 import torch.nn.functional as F
-from torch.optim import Adam, SGD
+from torch.optim import SGD
 from torch.optim.lr_scheduler import MultiStepLR
-
-from pruning import GradientDiversity, GradientDiversityTopKGradients, MonteCarloGDTopKGradients, RePruningConvDet, \
-    RePruningLinearDet
-from optimizer import PruneAdam
-from model import LeNet, AlexNet
-from performance_model import PerformanceModel
-from utils import regularized_nll_loss, admm_loss, \
-    initialize_Z_and_U, update_X, update_Z, update_Z_l1, update_U, \
-    print_convergence, print_prune, apply_prune, apply_l1_prune
-from torchvision import datasets, transforms
 from tqdm import tqdm
+
+from performance_model import PerformanceModel
+from pruning import GradientDiversity, MonteCarloGDTopKGradients, RePruningConvDet, \
+    RePruningLinearDet
+
 
 
 class REPruningMCGDTopKACDK:

@@ -1,7 +1,6 @@
-import torch
-import torchvision.models
-import torch.nn.functional as F
 import torch.nn as nn
+import torchvision.models
+
 
 
 def VGG16(num_classes=10):

@@ -1,5 +1,6 @@
-from torchvision import datasets, transforms
 import torch
+from torchvision import datasets, transforms
+
 
 
 class DataFactory:

@@ -3,12 +3,13 @@ This code is from official pytorch document (https://pytorch.org/docs/stable/_mo
 I modified optimizer to use name of the parameter for preventing prunned weights from updated by gradients
 """
 
+import collections.abc as container_abcs
 import math
 from collections import defaultdict
-import collections.abc as container_abcs
-import torch
 from copy import deepcopy
 from itertools import chain
+
+import torch
 
 
 class _RequiredParameter(object):

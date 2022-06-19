@@ -1,6 +1,3 @@
-from torchvision import datasets, transforms
-import torch
-
 from experiments import ADMMRetrain, ADMMIntra, GDTopK, MCGDTopK, MCGDTopKACDK, MCGDTopKAC, Baseline, \
     MCGDTopKACDKADMMIntra, REPruningMCGDTopKACDKADMMIntra, REPruningAC, MCGDTopKACDKADMMRetrain, REPruningADMMIntra, \
     REPruningACADMMIntra, REPruningACADMMRetrain, REPruningMCGDTopKACDKADMMRetrain, REPruningMCGDTopKACDK

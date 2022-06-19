@@ -1,15 +1,14 @@
 from __future__ import print_function
-import argparse
+
 import torch
 import torch.nn.functional as F
+from tqdm import tqdm
+
 from optimizer import PruneAdam
-from model import LeNet, AlexNet
 from performance_model import PerformanceModel
 from utils import regularized_nll_loss, admm_loss, \
     initialize_Z_and_U, update_X, update_Z, update_Z_l1, update_U, \
     print_convergence, print_prune, apply_prune, apply_l1_prune
-from torchvision import datasets, transforms
-from tqdm import tqdm
 
 
 class ADMMRetrain:
