@@ -52,7 +52,7 @@ class PerformanceModel:
     def __estimate_overhead_re_pruning_search(self, model):
         # https://coek.info/pdf-algorithms-54ed9513cfa623e30da35434ea7edcc833265.html
         # https://mast.queensu.ca/~andrew/notes/pdf/2010a.pdf
-        oh_search_space_iteration = 0  # TODO ensure that if multiple methods combined, accum is only accounted for once
+        oh_search_space_iteration = 0
         for name, param in model.named_parameters():
             prefix = name.split('.')[0]
             postfix = name.split('.')[1]
@@ -77,7 +77,7 @@ class PerformanceModel:
         return oh_search_space_iteration
 
     def __estimate_overhead_mask_computation(self, model):
-        oh_mask_computation = 0  # TODO ensure that if multiple methods combined, accum is only accounted for once
+        oh_mask_computation = 0
         for name, param in model.named_parameters():
             prefix = name.split('.')[0]
             postfix = name.split('.')[1]
@@ -87,24 +87,24 @@ class PerformanceModel:
                                 self.config.get('SPECIFICATION', 'metric_q_c', float) * self.config.get('SPECIFICATION',
                                                                                                         'sample_c', int)
                                 * torch.numel(param)
-                                / self.config.get('SPECIFICATION', 'lb', int))  # TODO this can still be optimized
+                                / self.config.get('SPECIFICATION', 'lb', int))
                 if 'fc' in name or 'classifier' in name:
                     oh_mask_computation += (
                                 self.config.get('SPECIFICATION', 'metric_q_l', float) * self.config.get('SPECIFICATION',
                                                                                                         'sample_l', int)
                                 * torch.numel(param)
-                                / self.config.get('SPECIFICATION', 'lb', int))  # TODO this can still be optimized
+                                / self.config.get('SPECIFICATION', 'lb', int))
         return oh_mask_computation
 
     def __estimate_overhead_mask_application(self, model):
-        oh_mask_application = 0  # TODO ensure that if multiple methods combined, accum is only accounted for once
+        oh_mask_application = 0
         for name, param in model.named_parameters():
             prefix = name.split('.')[0]
             postfix = name.split('.')[1]
             if postfix != 'bias':
                 if 'conv' in name or 'features' in name or 'fc' in name or 'classifier' in name:
                     oh_mask_application += torch.numel(
-                        param) * 2  # times two if grads masked TODO this can still be optimized
+                        param) * 2  # times two if grads masked
         return oh_mask_application
 
     def __estimate_overhead_gd_top_k(self, model):
@@ -140,7 +140,6 @@ class PerformanceModel:
             if postfix != 'bias':
                 if 'conv' in name or 'features' in name or 'fc' in name or 'classifier' in name:
                     oh_admm += torch.numel(param) * 3 + 2 * (np.prod(list(param.shape)))  # u, z + norm
-                    # TODO uz update
         return oh_admm
 
     def __estimate_overhead(self, model, epoch=None):
