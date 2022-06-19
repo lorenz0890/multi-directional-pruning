@@ -32,7 +32,9 @@ class ADMMRetrain:
         optimizer = PruneAdam(self.model.named_parameters(), lr=self.config.get('SPECIFICATION', 'lr', float),
                               eps=self.config.get('SPECIFICATION', 'adam_eps', float))
         self.__train(self.config, self.model, self.device, self.train_loader, self.test_loader, optimizer)
-        mask = apply_l1_prune(self.model, self.device, self.config) if self.config.get('SPECIFICATION', 'l1', bool) else apply_prune(self.model, self.device, self.config)
+        mask = apply_l1_prune(self.model, self.device, self.config) if self.config.get('SPECIFICATION', 'l1',
+                                                                                       bool) else apply_prune(
+            self.model, self.device, self.config)
         print_prune(self.model)
         self.__test(self.config, self.model, self.device, self.test_loader)
         self.__retrain(self.config, self.model, mask, self.device, self.train_loader, self.test_loader, optimizer)
@@ -89,7 +91,6 @@ class ADMMRetrain:
 
             self.__test(config, model, device, test_loader)
 
-
     def __test(self, config, model, device, test_loader):
         model.eval()
         test_loss = 0
@@ -98,8 +99,8 @@ class ADMMRetrain:
             for data, target in test_loader:
                 data, target = data.to(device), target.to(device)
                 output = model(data)
-                test_loss += F.nll_loss(output, target, reduction='sum').item() # sum up batch loss
-                pred = output.argmax(dim=1, keepdim=True) # get the index of the max log-probability
+                test_loss += F.nll_loss(output, target, reduction='sum').item()  # sum up batch loss
+                pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
                 correct += pred.eq(target.view_as(pred)).sum().item()
 
         test_loss /= len(test_loader.dataset)
@@ -108,7 +109,6 @@ class ADMMRetrain:
         print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
             test_loss, correct, len(test_loader.dataset),
             100. * correct / len(test_loader.dataset)))
-
 
     def __retrain(self, config, model, mask, device, train_loader, test_loader, optimizer):
         for epoch in range(config.get('SPECIFICATION', 'pre_epochs', int)):

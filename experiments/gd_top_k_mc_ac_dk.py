@@ -17,8 +17,9 @@ from utils import regularized_nll_loss, admm_loss, \
 from torchvision import datasets, transforms
 from tqdm import tqdm
 
+
 class MCGDTopKACDK:
-    def __init__(self, model, train_loader, test_loader, config, logger, visualization = None):
+    def __init__(self, model, train_loader, test_loader, config, logger, visualization=None):
         self.model = model
         self.train_loader = train_loader
         self.test_loader = test_loader
@@ -29,7 +30,9 @@ class MCGDTopKACDK:
         self.logger = logger
         self.visualization = visualization
         self.performance_model = PerformanceModel(model, train_loader, config, overhead_gd_top_k_mc=True, logger=logger)
-        self.gradient_diversity = MonteCarloGDTopKGradients(config.get('SPECIFICATION', 'lb', int), config.get('SPECIFICATION', 'k', int),config.get('SPECIFICATION', 'se', int) , model)
+        self.gradient_diversity = MonteCarloGDTopKGradients(config.get('SPECIFICATION', 'lb', int),
+                                                            config.get('SPECIFICATION', 'k', int),
+                                                            config.get('SPECIFICATION', 'se', int), model)
         self.ac = config.get('SPECIFICATION', 'ac', int)
         self.loss_log = []
         self.loss_m_log = []
@@ -42,7 +45,7 @@ class MCGDTopKACDK:
         self.performance_model.print_cuda_status()
         torch.manual_seed(self.config.get('OTHER', 'seed', int))
         optimizer = Adam(self.model.parameters(), lr=self.config.get('SPECIFICATION', 'lr', float),
-                              eps=self.config.get('SPECIFICATION', 'adam_eps', float))
+                         eps=self.config.get('SPECIFICATION', 'adam_eps', float))
 
         self.__train(self.config, self.model, self.device, self.train_loader, self.test_loader, optimizer)
         self.__test(self.config, self.model, self.device, self.test_loader)
@@ -53,21 +56,25 @@ class MCGDTopKACDK:
         if self.config.get('OTHER', 'vis_model', bool): self.visualization.visualize_model(self.model)
         if self.config.get('OTHER', 'vis_log', bool):
             self.visualization.visualize_perfstats(self.logger)
-            self.visualization.visualize_key_list(self.logger, ['top_k', 'accumulation', 'test_accuracy', 'test_loss', 'train_loss'])
+            self.visualization.visualize_key_list(self.logger,
+                                                  ['top_k', 'accumulation', 'test_accuracy', 'test_loss', 'train_loss'])
         if self.config.get('OTHER', 'save_model', bool): torch.save(self.model.state_dict(),
                                                                     self.config.get('OTHER', 'out_path', str))
+
     def __train(self, config, model, device, train_loader, test_loader, optimizer):
         for epoch in range(config.get('SPECIFICATION', 'epochs', int)):
             print('Epoch: {}'.format(epoch + 1))
             model.train()
             for batch_idx, (data, target) in enumerate(tqdm(train_loader)):
-                #self.performance_model.print_memstats(batch_idx, 100)
-                data, target = data, target#data.to(device), target.to(device)
+                # self.performance_model.print_memstats(batch_idx, 100)
+                data, target = data, target  # data.to(device), target.to(device)
                 output = model(data)
-                loss = F.nll_loss(output, target, reduction='sum')#regularized_nll_loss(config, model, output, target)
+                loss = F.nll_loss(output, target,
+                                  reduction='sum')  # regularized_nll_loss(config, model, output, target)
                 l1 = sum(p.abs().sum() for p in self.model.parameters())
                 l2 = sum(p.norm() for p in self.model.parameters())
-                loss += self.config.get('SPECIFICATION', 'l1', float) * l1 + self.config.get('SPECIFICATION', 'l1',float) * l2
+                loss += self.config.get('SPECIFICATION', 'l1', float) * l1 + self.config.get('SPECIFICATION', 'l1',
+                                                                                             float) * l2
                 loss = loss / self.ac
                 loss.backward()
                 self.gradient_diversity.norm_grads(model)
@@ -77,7 +84,8 @@ class MCGDTopKACDK:
                 self.gradient_diversity.reset_accum_grads(batch_idx)
 
                 self.loss_log.append(loss.item())
-                loss_m = sum(self.loss_log[-config.get('SPECIFICATION', 'lb', int):]) / len(self.loss_log[-config.get('SPECIFICATION', 'lb', int):])
+                loss_m = sum(self.loss_log[-config.get('SPECIFICATION', 'lb', int):]) / len(
+                    self.loss_log[-config.get('SPECIFICATION', 'lb', int):])
                 self.loss_m_log.append(loss_m)
                 self.loss_ratio_log.append(self.loss_log[-1] / loss_m)
                 if batch_idx not in self.k_batch_map:
@@ -87,7 +95,9 @@ class MCGDTopKACDK:
                     self.ac = max(1, self.ac * 0.9)
                 elif self.k < self.k_max:
                     self.k_batch_map[batch_idx].append(min(self.k_max, self.k + 1))
-                    self.ac = min(config.get('SPECIFICATION', 'lb', int) - batch_idx % config.get('SPECIFICATION', 'lb', int), self.ac *1.1)
+                    self.ac = min(
+                        config.get('SPECIFICATION', 'lb', int) - batch_idx % config.get('SPECIFICATION', 'lb', int),
+                        self.ac * 1.1)
                 else:
                     self.k_batch_map[batch_idx].append(self.k)
                 self.logger.log('accumulation', self.ac)
@@ -98,14 +108,14 @@ class MCGDTopKACDK:
                 self.gradient_diversity.select_delete_grads(batch_idx, epoch)
                 self.gradient_diversity.delete_selected_grads(model)
 
-                self.performance_model.eval(model, ac = self.ac, epoch=epoch)
+                self.performance_model.eval(model, ac=self.ac, epoch=epoch)
                 if (batch_idx + 1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
                     self.performance_model.print_perf_stats()
                 self.performance_model.log_perf_stats()
                 self.performance_model.log_layer_sparsity(self.model)
                 self.logger.log('train_loss', loss.item())
-                #print(batch_idx+1, self.ac)
-                if (batch_idx+1) % int(self.ac) == 0 or (batch_idx+1) % len(train_loader) == 0:
+                # print(batch_idx+1, self.ac)
+                if (batch_idx + 1) % int(self.ac) == 0 or (batch_idx + 1) % len(train_loader) == 0:
                     optimizer.step()
                     optimizer.zero_grad(set_to_none=True)
 
@@ -117,10 +127,10 @@ class MCGDTopKACDK:
         correct = 0
         with torch.no_grad():
             for data, target in test_loader:
-                data, target = data, target# data.to(device), target.to(device)
+                data, target = data, target  # data.to(device), target.to(device)
                 output = model(data)
-                test_loss += F.nll_loss(output, target, reduction='sum').item() # sum up batch loss
-                pred = output.argmax(dim=1, keepdim=True) # get the index of the max log-probability
+                test_loss += F.nll_loss(output, target, reduction='sum').item()  # sum up batch loss
+                pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
                 correct += pred.eq(target.view_as(pred)).sum().item()
 
         test_loss /= len(test_loader.dataset)

@@ -13,8 +13,10 @@ from itertools import chain
 
 class _RequiredParameter(object):
     """Singleton class representing a required parameter for an Optimizer."""
+
     def __repr__(self):
         return "<required parameter>"
+
 
 required = _RequiredParameter()
 
@@ -84,11 +86,13 @@ class NameOptimizer(object):
             differs between optimizer classes.
         * param_groups - a dict containing all parameter groups
         """
+
         # Save ids instead of Tensors
         def pack_group(group):
             packed = {k: v for k, v in group.items() if k != 'params'}
             packed['params'] = [id(p) for p in group['params']]
             return packed
+
         param_groups = [pack_group(g) for g in self.param_groups]
         # Remap state to use ids as keys
         packed_state = {(id(k) if isinstance(k, torch.Tensor) else k): v
@@ -156,6 +160,7 @@ class NameOptimizer(object):
         def update_group(group, new_group):
             new_group['params'] = group['params']
             return new_group
+
         param_groups = [
             update_group(g, ng) for g, ng in zip(groups, saved_groups)]
         self.__setstate__({'state': state, 'param_groups': param_groups})

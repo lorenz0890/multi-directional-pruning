@@ -3,6 +3,7 @@ from torch.distributions import Categorical
 
 from pruning import GradientDiversity
 
+
 class MonteCarloGDTopKGradients(GradientDiversity):
     def __init__(self, lb, k, se, model):
         super().__init__(lb)
@@ -17,13 +18,13 @@ class MonteCarloGDTopKGradients(GradientDiversity):
         for n, p in model.named_parameters():
             if 'bias' not in n:
                 ctr += 1
-                self.names .append(n)
-        for n in self.names :
+                self.names.append(n)
+        for n in self.names:
             if 'bias' not in n:
                 self.probabilities[n] = 1 / ctr
         self.cat = Categorical(probs=torch.tensor(list(self.probabilities.values())),
-                          logits=None,
-                          validate_args=None)
+                               logits=None,
+                               validate_args=None)
         self.observations_ctr = 0
 
     def __update_probabilities(self):
@@ -52,7 +53,7 @@ class MonteCarloGDTopKGradients(GradientDiversity):
         self.cat.probs = torch.Tensor(list(self.probabilities.values()))
 
     def __select_delete_grads_probabilistic(self):
-        self.delete_g = list(set([self.names[self.cat.sample()] for i in range(self.k)]))#del_g
+        self.delete_g = list(set([self.names[self.cat.sample()] for i in range(self.k)]))  # del_g
 
     def update_epoch(self, epoch):
         self.epoch = epoch
@@ -61,7 +62,7 @@ class MonteCarloGDTopKGradients(GradientDiversity):
         self.k = k
 
     def accum_grads(self, model):
-        if (self.epoch+1) % self.se == 0:
+        if (self.epoch + 1) % self.se == 0:
             for i, (n, p) in enumerate(model.named_parameters()):
                 if not 'bias' in n:
                     if not n in self.accum_g:
@@ -70,17 +71,17 @@ class MonteCarloGDTopKGradients(GradientDiversity):
                         self.accum_g[n] += p.grad
 
     def select_delete_grads(self, idx, epoch):
-        if (epoch+1) % self.se == 0: # TODO check this is right -  shouldnt we always sample at 0?
-            if (idx+1) % self.lb == 0:
-                    self.delete_g = []
-                    lgd_cpy = self.layer_gd.copy()
-                    for i in range(0, self.k):
-                        min_lgd = min(self.layer_gd, key=lgd_cpy.get)
-                        self.delete_g.append(min_lgd)
-                        lgd_cpy[min_lgd] = float('inf')
-                    self.__update_probabilities()
+        if (epoch + 1) % self.se == 0:  # TODO check this is right -  shouldnt we always sample at 0?
+            if (idx + 1) % self.lb == 0:
+                self.delete_g = []
+                lgd_cpy = self.layer_gd.copy()
+                for i in range(0, self.k):
+                    min_lgd = min(self.layer_gd, key=lgd_cpy.get)
+                    self.delete_g.append(min_lgd)
+                    lgd_cpy[min_lgd] = float('inf')
+                self.__update_probabilities()
         else:
-            if (idx+1) % self.lb == 0:
+            if (idx + 1) % self.lb == 0:
                 self.__select_delete_grads_probabilistic()
                 print(self.delete_g, flush=True)
 

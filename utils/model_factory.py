@@ -10,6 +10,7 @@ from model import LeNet, AlexNet, VGG16, ResNet18, AlexNet_S, VGG16BN, VGG13, VG
     DenseNet161, DenseNet169, DenseNet201, ResNet56, ResNet44, ResNet32, ResNet20, LeNetA
 from .custom_init import truncated_normal_variance_scaling
 
+
 class ModelFactory:
     def __init__(self):
         pass

@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.nn.init as init
 import torch.nn.functional as F
 
+
 def _weights_init(m):
     """
         Initialization of CNN weights

@@ -16,9 +16,10 @@ class RePruningConvDet(RePruning):
         self.lb = lb
         self.scale = scale
         self.metrics = {}
+
     def compute_mask(self, model, acm_g, batch_idx):
         with torch.no_grad():
-            if (batch_idx+1) % self.lb == 0:
+            if (batch_idx + 1) % self.lb == 0:
                 self.metrics = {}
                 for sample in range(self.sample):
                     for i, (n, p) in enumerate(model.named_parameters()):
@@ -29,53 +30,76 @@ class RePruningConvDet(RePruning):
                                 W0 = W - self.lr * G
                                 W = W / torch.norm(W)
                                 W0 = W0 / torch.norm(W0)
-                                sz_k = np.random.randint(int(p.shape[0] * self.scale)+1, p.shape[0]+1)
-                                sz_j = np.random.randint(int(p.shape[1] * self.scale)+1, p.shape[1]+1)
-                                for key in range(0, p.shape[0]-sz_k, sz_k):
+                                sz_k = np.random.randint(int(p.shape[0] * self.scale) + 1, p.shape[0] + 1)
+                                sz_j = np.random.randint(int(p.shape[1] * self.scale) + 1, p.shape[1] + 1)
+                                for key in range(0, p.shape[0] - sz_k, sz_k):
                                     if p.shape[1] == 1:
                                         j = 0
-                                        nz_w = W[key:key + sz_k, j, :, :].count_nonzero()  # cheap in sparse tensor format
+                                        nz_w = W[key:key + sz_k, j, :,
+                                               :].count_nonzero()  # cheap in sparse tensor format
                                         nz_w0 = W0[key:key + sz_k, j, :, :].count_nonzero()
-                                        if not "{}:{}:{}:{}:{}".format(n, key, j, sz_k, sz_j) in self.metrics and (nz_w + nz_w0)>=1:
-                                            norm_w = torch.norm(W[key:key+sz_k, j, :, :]) if nz_w >= 1 else 0
+                                        if not "{}:{}:{}:{}:{}".format(n, key, j, sz_k, sz_j) in self.metrics and (
+                                                nz_w + nz_w0) >= 1:
+                                            norm_w = torch.norm(W[key:key + sz_k, j, :, :]) if nz_w >= 1 else 0
                                             if norm_w != 0:
                                                 norm_w0 = torch.norm(W0[key:key + sz_k, j, :, :]) if nz_w0 >= 1 else 0
                                                 metric = (norm_w / norm_w0).item() if norm_w0 > 0 else float('inf')
                                                 self.metrics["{}:{}:{}:{}:{}".format(n, key, j, sz_k, sz_j)] = metric
                                             else:
-                                                self.metrics["{}:{}:{}:{}:{}".format(n, key, j, sz_k, sz_j)] = float('inf')
+                                                self.metrics["{}:{}:{}:{}:{}".format(n, key, j, sz_k, sz_j)] = float(
+                                                    'inf')
                                     else:
-                                        for j in range(0, p.shape[1]-sz_j, sz_j):
-                                            nz_w = W[key:key + sz_k, j + sz_j, :, :].count_nonzero()  # cheap in sparse tensor format
+                                        for j in range(0, p.shape[1] - sz_j, sz_j):
+                                            nz_w = W[key:key + sz_k, j + sz_j, :,
+                                                   :].count_nonzero()  # cheap in sparse tensor format
                                             nz_w0 = W0[key:key + sz_k, j + sz_j, :, :].count_nonzero()
-                                            if not "{}:{}:{}:{}:{}".format(n, key, j, sz_k, sz_j) in self.metrics and (nz_w + nz_w0)>=1:
-                                                norm_w = torch.norm(W[key:key+sz_k, j+sz_j, :, :]) if nz_w >= 1 else 0
+                                            if not "{}:{}:{}:{}:{}".format(n, key, j, sz_k, sz_j) in self.metrics and (
+                                                    nz_w + nz_w0) >= 1:
+                                                norm_w = torch.norm(
+                                                    W[key:key + sz_k, j + sz_j, :, :]) if nz_w >= 1 else 0
                                                 if norm_w != 0:
-                                                    norm_w0 = torch.norm(W0[key:key + sz_k, j:j + sz_j, :, :]) if nz_w0 >= 1 else 0
+                                                    norm_w0 = torch.norm(
+                                                        W0[key:key + sz_k, j:j + sz_j, :, :]) if nz_w0 >= 1 else 0
                                                     metric = (norm_w / norm_w0).item() if norm_w0 > 0 else float('inf')
-                                                    self.metrics["{}:{}:{}:{}:{}".format(n, key, j, sz_k, sz_j)] = metric
+                                                    self.metrics[
+                                                        "{}:{}:{}:{}:{}".format(n, key, j, sz_k, sz_j)] = metric
                                                 else:
-                                                    self.metrics["{}:{}:{}:{}:{}".format(n, key, j, sz_k, sz_j)] = float('inf')
+                                                    self.metrics[
+                                                        "{}:{}:{}:{}:{}".format(n, key, j, sz_k, sz_j)] = float('inf')
 
                 metric_vals = list(self.metrics.values())
                 if len(metric_vals) > 0:
                     metric_threshold = np.quantile(list(self.metrics.values()), self.metric_quantile)
                     candidates = {}
                     for key in self.metrics:
-                        if self.metrics[key] <= metric_threshold and not np.isnan(self.metrics[key]) and not self.metrics[key] == float('inf'):
+                        if self.metrics[key] <= metric_threshold and not np.isnan(self.metrics[key]) and not \
+                        self.metrics[key] == float('inf'):
                             idx = key.split(':')
                             if idx[0] not in candidates:
                                 candidates[idx[0]] = []
                             candidates[idx[0]].append(key)
-                    #print(metric_threshold, flush=True)
+                    # print(metric_threshold, flush=True)
                     for n in candidates:
-                        #print(n, model.state_dict()[n].data.shape, len(candidates[n]), flush=True)
+                        # print(n, model.state_dict()[n].data.shape, len(candidates[n]), flush=True)
                         mask = torch.ones_like(model.state_dict()[n].data)
                         for key in candidates[n]:
-                            #print(key, flush=True)
+                            # print(key, flush=True)
                             idx = key.split(':')
-                            mask[int(idx[1]):int(idx[1]) + int(idx[3])][int(idx[2]):int(idx[2]) + int(idx[4])] = mask[int(
-                                idx[1]):int(idx[1]) + int(idx[3])][int(idx[2]):int(idx[2]) + int(idx[4])] * 0.0
+                            mask[int(idx[1]):int(idx[1]) + int(idx[3])][int(idx[2]):int(idx[2]) + int(idx[4])] = mask[
+                                                                                                                 int(
+                                                                                                                     idx[
+                                                                                                                         1]):int(
+                                                                                                                     idx[
+                                                                                                                         1]) + int(
+                                                                                                                     idx[
+                                                                                                                         3])][
+                                                                                                                 int(
+                                                                                                                     idx[
+                                                                                                                         2]):int(
+                                                                                                                     idx[
+                                                                                                                         2]) + int(
+                                                                                                                     idx[
+                                                                                                                         4])] * 0.0
                         '''
                         mask = mask * torch.where(
                             torch.abs(model.state_dict()[n].data) > self.magnitude_threshold,
@@ -94,15 +118,15 @@ class RePruningConvDet(RePruning):
                     if n in self.masks:
                         p.data = p.data * (self.masks[n] + (torch.ones_like(p.data) - self.masks[n]) * self.strength)
                         if p.grad.data is not None:
-                            p.grad.data = p.grad.data * self.masks[n]#(self.masks[n] + (torch.ones_like(p.data) - self.masks[n]) * self.strength)
+                            p.grad.data = p.grad.data * self.masks[
+                                n]  # (self.masks[n] + (torch.ones_like(p.data) - self.masks[n]) * self.strength)
 
     def apply_threshold(self, model):
         with torch.no_grad():
             for i, (n, p) in enumerate(model.named_parameters()):
                 if p.grad is not None and not 'bias' in n and ('conv' in n or 'features' in n):
                     p.data = torch.where(torch.abs(p.data) > self.magnitude_threshold, p.data, torch.zeros_like(p.data))
-                    #print(n, p.data.grad is None, p.grad.data is None, flush=True)
-                    if p.grad.data is not None: # keep this or not?
+                    # print(n, p.data.grad is None, p.grad.data is None, flush=True)
+                    if p.grad.data is not None:  # keep this or not?
                         p.grad.data = torch.where(torch.abs(p.grad.data) > self.magnitude_threshold, p.grad.data,
                                                   torch.zeros_like(p.grad.data))
-

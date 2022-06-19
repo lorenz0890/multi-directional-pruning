@@ -23,7 +23,7 @@ def admm_loss(config, device, model, Z, U, output, target):
             z = Z[idx].to(device)
             loss += config.get('SPECIFICATION', 'rho', float) / 2 * (param - z + u).norm()
             if config.get('SPECIFICATION', 'l2', bool):
-                loss +=  config.get('SPECIFICATION', 'alpha', float) * param.norm()
+                loss += config.get('SPECIFICATION', 'alpha', float) * param.norm()
             idx += 1
     return loss
 
@@ -50,10 +50,12 @@ def update_Z(X, U, config):
     new_Z = ()
     idx = 0
     print(len(X), flush=True)
-    print(len(config.get('SPECIFICATION', 'percent', lambda a : [float(b) for b in str(a).split(',')])), flush=True)
+    print(len(config.get('SPECIFICATION', 'percent', lambda a: [float(b) for b in str(a).split(',')])), flush=True)
     for x, u in zip(X, U):
         z = x + u
-        pcen = np.percentile(abs(z), 100 *  config.get('SPECIFICATION', 'percent', lambda a : [float(b) for b in str(a).split(',')])[idx])
+        pcen = np.percentile(abs(z), 100 *
+                             config.get('SPECIFICATION', 'percent', lambda a: [float(b) for b in str(a).split(',')])[
+                                 idx])
         under_threshold = abs(z) < pcen
         z.data[under_threshold] = 0
         new_Z += (z,)
@@ -63,7 +65,7 @@ def update_Z(X, U, config):
 
 def update_Z_l1(X, U, config):
     new_Z = ()
-    delta = config.get('SPECIFICATION', 'alpha', float)  / config.get('SPECIFICATION', 'rho', float)
+    delta = config.get('SPECIFICATION', 'alpha', float) / config.get('SPECIFICATION', 'rho', float)
     for x, u in zip(X, U):
         z = x + u
         new_z = z.clone()
@@ -88,7 +90,7 @@ def update_U(U, X, Z):
 def prune_weight(weight, device, percent):
     # to work with admm, we calculate percentile based on all elements instead of nonzero elements.
     weight_numpy = weight.detach().cpu().numpy()
-    pcen = np.percentile(abs(weight_numpy), 100*percent)
+    pcen = np.percentile(abs(weight_numpy), 100 * percent)
     under_threshold = abs(weight_numpy) < pcen
     weight_numpy[under_threshold] = 0
     mask = torch.Tensor(abs(weight_numpy) >= pcen).to(device)
@@ -110,7 +112,9 @@ def apply_prune(model, device, config):
     idx = 0
     for name, param in model.named_parameters():
         if name.split('.')[-1] == "weight":
-            mask = prune_weight(param, device, config.get('SPECIFICATION', 'percent', lambda a : [float(b) for b in str(a).split(',')])[idx])
+            mask = prune_weight(param, device,
+                                config.get('SPECIFICATION', 'percent', lambda a: [float(b) for b in str(a).split(',')])[
+                                    idx])
             param.data.mul_(mask)
             # param.data = torch.Tensor(weight_pruned).to(device)
             dict_mask[name] = mask
@@ -119,7 +123,7 @@ def apply_prune(model, device, config):
 
 
 def apply_l1_prune(model, device, config):
-    delta = config.get('SPECIFICATION', 'alpha', float)  / config.get('SPECIFICATION', 'rho', float)
+    delta = config.get('SPECIFICATION', 'alpha', float) / config.get('SPECIFICATION', 'rho', float)
     print("Apply Pruning based on percentile")
     dict_mask = {}
     idx = 0
@@ -138,7 +142,7 @@ def print_convergence(model, X, Z):
     for name, _ in model.named_parameters():
         if name.split('.')[-1] == "weight":
             x, z = X[idx], Z[idx]
-            print("({}): {:.4f}".format(name, (x-z).norm().item() / x.norm().item()))
+            print("({}): {:.4f}".format(name, (x - z).norm().item() / x.norm().item()))
             idx += 1
 
 

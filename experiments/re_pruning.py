@@ -34,7 +34,8 @@ class REPruning:
         self.logger = logger
         self.visualization = visualization
         self.performance_model = PerformanceModel(model, train_loader, config, overhead_re_pruning=True, logger=logger)
-        self.gradient_diversity = GradientDiversity(config.get('SPECIFICATION', 'lb', int)) #Only required for G Norm & Accum functionality
+        self.gradient_diversity = GradientDiversity(
+            config.get('SPECIFICATION', 'lb', int))  # Only required for G Norm & Accum functionality
 
         self.conv_pruning = RePruningConvDet(self.config.get('SPECIFICATION', 'softness_c', float),
                                              self.config.get('SPECIFICATION', 'magnitude_t_c', float),
@@ -44,20 +45,19 @@ class REPruning:
                                              config.get('SPECIFICATION', 'lb', int),
                                              self.config.get('SPECIFICATION', 'scale_c', float))
         self.linear_pruning = RePruningLinearDet(self.config.get('SPECIFICATION', 'softness_l', float),
-                                             self.config.get('SPECIFICATION', 'magnitude_t_l', float),
-                                             self.config.get('SPECIFICATION', 'metric_q_l', float),
-                                             self.config.get('SPECIFICATION', 'lr', float),
-                                             self.config.get('SPECIFICATION', 'sample_l', int),
-                                             config.get('SPECIFICATION', 'lb', int),
-                                             self.config.get('SPECIFICATION', 'scale_l', float))
+                                                 self.config.get('SPECIFICATION', 'magnitude_t_l', float),
+                                                 self.config.get('SPECIFICATION', 'metric_q_l', float),
+                                                 self.config.get('SPECIFICATION', 'lr', float),
+                                                 self.config.get('SPECIFICATION', 'sample_l', int),
+                                                 config.get('SPECIFICATION', 'lb', int),
+                                                 self.config.get('SPECIFICATION', 'scale_l', float))
 
         self.optimizer = SGD(self.model.parameters(), lr=self.config.get('SPECIFICATION', 'lr', float),
                              weight_decay=0.0)
         self.scheduler = MultiStepLR(self.optimizer, milestones=self.config.get('SPECIFICATION', 'steps',
                                                                                 lambda a: [int(b) for b in
                                                                                            str(a).split(',')]),
-                                                                                gamma=config.get('SPECIFICATION', 'gamma', float))
-
+                                     gamma=config.get('SPECIFICATION', 'gamma', float))
 
         # TODO add overhead w/o mask application to performance model
         # TODO add overhead w/ mask application to performance model
@@ -69,6 +69,7 @@ class REPruning:
         # TODO In master thesis correct norm from spectral (i.e. 2 norm) to frobenius
         # TODO make grad/weights pruning optional switches
         # TODO quantile instead of threshold and number of attempts? OK
+
     def dispatch(self):
         self.performance_model.print_cuda_status()
         torch.manual_seed(self.config.get('OTHER', 'seed', int))
@@ -81,7 +82,8 @@ class REPruning:
         if self.config.get('OTHER', 'vis_log', bool):
             self.visualization.visualize_perfstats(self.logger)
             self.visualization.visualize_key_list(self.logger, ['test_accuracy', 'test_loss', 'train_loss'])
-        if self.config.get('OTHER', 'save_model', bool): torch.save(self.model.state_dict(), self.config.get('OTHER', 'out_path', str))
+        if self.config.get('OTHER', 'save_model', bool): torch.save(self.model.state_dict(),
+                                                                    self.config.get('OTHER', 'out_path', str))
 
     def __train(self):
         for epoch in range(self.config.get('SPECIFICATION', 'epochs', int)):
@@ -96,7 +98,8 @@ class REPruning:
                 if epoch > self.config.get('SPECIFICATION', 'prune_epochs', int):
                     l1 = sum(p.abs().sum() for p in self.model.parameters())
                     l2 = sum(p.norm() for p in self.model.parameters())
-                    loss += self.config.get('SPECIFICATION', 'l1', float) * l1 +self. config.get('SPECIFICATION', 'l1', float) * l2
+                    loss += self.config.get('SPECIFICATION', 'l1', float) * l1 + self.config.get('SPECIFICATION', 'l1',
+                                                                                                 float) * l2
                 loss.backward()
 
                 self.gradient_diversity.norm_grads(self.model)
@@ -105,7 +108,7 @@ class REPruning:
                     self.gradient_diversity.update_gd(batch_idx)
                     self.conv_pruning.compute_mask(self.model, self.gradient_diversity.accum_g, batch_idx)
                     self.linear_pruning.compute_mask(self.model, self.gradient_diversity.accum_g, batch_idx)
-                    self.gradient_diversity.reset_accum_grads() # clears accumulated grads
+                    self.gradient_diversity.reset_accum_grads()  # clears accumulated grads
                     self.conv_pruning.apply_mask(self.model)
                     self.linear_pruning.apply_mask(self.model)
 
@@ -114,7 +117,7 @@ class REPruning:
                     self.linear_pruning.apply_threshold(self.model)
 
                 self.performance_model.eval(self.model, 1)
-                if (batch_idx+1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
+                if (batch_idx + 1) % (self.config.get('SPECIFICATION', 'lb', int)) == 0:
                     self.performance_model.print_perf_stats()
                 self.performance_model.log_perf_stats()
                 self.performance_model.log_layer_sparsity(self.model)
@@ -132,8 +135,8 @@ class REPruning:
             for data, target in self.test_loader:
                 data, target = data.to(self.device), target.to(self.device)
                 output = self.model(data)
-                test_loss += F.nll_loss(output, target, reduction='sum').item() # sum up batch loss
-                pred = output.argmax(dim=1, keepdim=True) # get the index of the max log-probability
+                test_loss += F.nll_loss(output, target, reduction='sum').item()  # sum up batch loss
+                pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
                 correct += pred.eq(target.view_as(pred)).sum().item()
 
         test_loss /= len(self.test_loader.dataset)

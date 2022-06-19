@@ -31,11 +31,14 @@ class Baseline:
         self.gradient_diversity = GradientDiversityTopKGradients(1, 1)  # Only required for gradient normalization
         self.logger = logger
         self.visualization = visualization
-        self.optimizer = SGD(self.model.parameters(), lr=self.config.get('SPECIFICATION', 'lr', float), weight_decay=0.0)
+        self.optimizer = SGD(self.model.parameters(), lr=self.config.get('SPECIFICATION', 'lr', float),
+                             weight_decay=0.0)
         self.scheduler = MultiStepLR(self.optimizer, milestones=self.config.get('SPECIFICATION', 'steps',
-                                                                           lambda a: [int(b) for b in str(a).split(',')]),
-                                                                           gamma=config.get('SPECIFICATION', 'gamma', float))
+                                                                                lambda a: [int(b) for b in
+                                                                                           str(a).split(',')]),
+                                     gamma=config.get('SPECIFICATION', 'gamma', float))
         self.performance_model = PerformanceModel(model, train_loader, config, logger=logger)
+
     def dispatch(self):
         self.performance_model.print_cuda_status()
         torch.manual_seed(self.config.get('OTHER', 'seed', int))
@@ -60,7 +63,8 @@ class Baseline:
                 loss = F.nll_loss(output, target, reduction='sum')
                 l1 = sum(p.abs().sum() for p in self.model.parameters())
                 l2 = sum(p.norm() for p in self.model.parameters())
-                loss += self.config.get('SPECIFICATION', 'l1', float) * l1 +self. config.get('SPECIFICATION', 'l1', float) * l2
+                loss += self.config.get('SPECIFICATION', 'l1', float) * l1 + self.config.get('SPECIFICATION', 'l1',
+                                                                                             float) * l2
                 loss.backward()
                 self.gradient_diversity.norm_grads(self.model)
                 self.logger.log('train_loss', loss.item())

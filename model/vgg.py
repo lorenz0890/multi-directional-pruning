@@ -2,16 +2,17 @@ import torch
 import torch.nn as nn
 from typing import Union, List, Dict, Any, cast
 
+
 # Adapted from https://github.com/HobbitLong/RepDistiller/blob/master/models/vgg.py
 # and https://modelzoo.co/model/repdistiller
 # and https://github.com/chengyangfu/pytorch-vgg-cifar10/blob/master/vgg.py
 class VGG(nn.Module):
 
     def __init__(
-        self,
-        features: nn.Module,
-        num_classes: int = 1000,
-        init_weights: bool = True
+            self,
+            features: nn.Module,
+            num_classes: int = 1000,
+            init_weights: bool = True
     ) -> None:
         super(VGG, self).__init__()
         self.features = features
@@ -85,8 +86,6 @@ def vgg8(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VGG:
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     return _vgg('vgg8', 'S', False, pretrained, progress, **kwargs)
-
-
 
 
 def vgg8_bn(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VGG:

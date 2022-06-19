@@ -9,15 +9,16 @@ import re
 sns.set()
 from matplotlib import pyplot as plt
 
+
 class Visualization:
-    def __init__(self, config, path = None):
+    def __init__(self, config, path=None):
         self.path = path
         self.logdict = {}
         self.config = config
         self.active = True
 
         if self.path is None or self.path == 'Default':
-            self.path = os.getcwd()+'/logfiles/'
+            self.path = os.getcwd() + '/logfiles/'
 
     def __make_name(self, tag=None):
         name = ''
@@ -45,7 +46,7 @@ class Visualization:
     def __visualize_global_sparsity(self, logger):
         for key in logger.logdict['LOGDATA']:
             if ('total' in key or 'current' in key) and 'sparsity' in key:
-                plt.plot(np.array(logger.logdict['LOGDATA'][key])*100, label=key.replace('_', ' '))
+                plt.plot(np.array(logger.logdict['LOGDATA'][key]) * 100, label=key.replace('_', ' '))
                 plt.legend()
         plt.ylabel('sparsity (%)')
         plt.xlabel('iterations')
@@ -54,7 +55,8 @@ class Visualization:
         plt.clf()
 
     def __visualize_global_overhead(self, logger):
-        plt.plot(np.array(logger.logdict['LOGDATA']['current_relative_overhead'])*100, label='current_relative_overhead'.replace('_', ' '))
+        plt.plot(np.array(logger.logdict['LOGDATA']['current_relative_overhead']) * 100,
+                 label='current_relative_overhead'.replace('_', ' '))
         plt.legend()
         plt.ylabel('overhead (%)')
         plt.xlabel('iterations')
@@ -85,7 +87,7 @@ class Visualization:
 
         ax = plt.subplot()
         print(np.array(sparsity).shape, flush=True)
-        cm = ax.pcolormesh(np.array(sparsity)*100, cmap='coolwarm')
+        cm = ax.pcolormesh(np.array(sparsity) * 100, cmap='coolwarm')
         y_pos = range(0, len(labels))
         y_pos = [i + 0.5 for i in y_pos]
         plt.yticks(y_pos, labels, va='center')
@@ -101,7 +103,7 @@ class Visualization:
 
         ax = plt.subplot()
         print(np.array(sparsity_grad).shape, flush=True)
-        cm = ax.pcolormesh(np.array(sparsity_grad)*100, cmap='coolwarm')
+        cm = ax.pcolormesh(np.array(sparsity_grad) * 100, cmap='coolwarm')
         y_pos = range(0, len(labels_grad))
         y_pos = [i + 0.5 for i in y_pos]
         plt.yticks(y_pos, labels_grad, va='center')
@@ -120,13 +122,14 @@ class Visualization:
             ylabel = key.replace('_', ' ').capitalize()
             vals = np.array(logger.logdict['LOGDATA'][key])
             if 'accuracy' in ylabel:
-                vals = np.array(logger.logdict['LOGDATA'][key])*100
+                vals = np.array(logger.logdict['LOGDATA'][key]) * 100
                 ylabel += (' (%)')
             plt.plot(vals, label=ylabel)
             plt.legend()
             plt.ylabel(key.replace('_', ' ').capitalize())
             plt.xlabel('iterations')
-            plt.title('{} {}'.format(self.config['EXPERIMENT']['model'].capitalize(), key.replace('_', ' ').capitalize()))
+            plt.title(
+                '{} {}'.format(self.config['EXPERIMENT']['model'].capitalize(), key.replace('_', ' ').capitalize()))
             plt.savefig(self.path + self.__make_name(key))
             plt.clf()
 
@@ -136,9 +139,8 @@ class Visualization:
         self.__visualize_global_overhead(logger)
         self.__visualize_local_sparsity(logger)
 
-
     def visualize_model(self, model):
-        sns.set(rc={'figure.figsize':(11.7,5.27)})
+        sns.set(rc={'figure.figsize': (11.7, 5.27)})
         for k, (name, p) in enumerate(model.named_parameters()):
             if 'bias' not in name:
                 print(name, p.shape)
@@ -154,23 +156,23 @@ class Visualization:
                     plt.axis('off')
                     plt.grid(None)
                     plt.title('{} {} Tensor'.format(self.config['EXPERIMENT']['model'].capitalize(), name))
-                    plt.savefig(self.path+self.__make_name(tag=name))
+                    plt.savefig(self.path + self.__make_name(tag=name))
                 if len(p.shape) == 4:
-                    fig, ax = plt.subplots(ncols = p.shape[0], nrows = p.shape[1],
-                                     sharex=True, sharey=True, tight_layout=False, squeeze=False)
+                    fig, ax = plt.subplots(ncols=p.shape[0], nrows=p.shape[1],
+                                           sharex=True, sharey=True, tight_layout=False, squeeze=False)
                     img = p.detach().numpy()
                     for i in range(p.shape[0]):
                         for j in range(p.shape[1]):
                             ax[j][i].autoscale()
-                            ax[j][i].matshow(img[i][j])#.imshow(img)
-                            #ax[j][i].tick_params(axis='both', which='major', labelsize=10)
-                            #ax[j][i].tick_params(axis='both', which='minor', labelsize=8)
-                            #ax[j][i].set_xticks([0,1,2,3,4])
-                            #ax[j][i].set_yticks([0,1,2,3,4])
+                            ax[j][i].matshow(img[i][j])  # .imshow(img)
+                            # ax[j][i].tick_params(axis='both', which='major', labelsize=10)
+                            # ax[j][i].tick_params(axis='both', which='minor', labelsize=8)
+                            # ax[j][i].set_xticks([0,1,2,3,4])
+                            # ax[j][i].set_yticks([0,1,2,3,4])
                             ax[j][i].grid(None)
                             ax[j][i].axis('off')
 
                     fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.1, hspace=0.1)
-                    #plt.title('{} {} Tensor'.format(self.config['EXPERIMENT']['model'].capitalize(), name))
-                    plt.savefig(self.path+self.__make_name(tag=name))
+                    # plt.title('{} {} Tensor'.format(self.config['EXPERIMENT']['model'].capitalize(), name))
+                    plt.savefig(self.path + self.__make_name(tag=name))
                     plt.clf()

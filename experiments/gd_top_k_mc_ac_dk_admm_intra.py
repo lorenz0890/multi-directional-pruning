@@ -13,6 +13,7 @@ from torchvision import datasets, transforms
 from tqdm import tqdm
 import random
 
+
 class MCGDTopKACDKADMMIntra:
     def __init__(self, model, train_loader, test_loader, config, logger, visualization=None):
         self.model = model
@@ -31,7 +32,8 @@ class MCGDTopKACDKADMMIntra:
         self.use_cuda = not config.get('OTHER', 'no_cuda', bool) and torch.cuda.is_available()
         self.kwargs = {'num_workers': 1, 'pin_memory': True} if self.use_cuda else {}
         self.device = torch.device("cuda" if self.use_cuda else "cpu")
-        self.performance_model = PerformanceModel(model, train_loader, config, overhead_gd_top_k_mc=True, overhead_admm=True, logger=logger)
+        self.performance_model = PerformanceModel(model, train_loader, config, overhead_gd_top_k_mc=True,
+                                                  overhead_admm=True, logger=logger)
         self.gradient_diversity = MonteCarloGDTopKGradients(config.get('SPECIFICATION', 'lb', int),
                                                             config.get('SPECIFICATION', 'k', int),
                                                             config.get('SPECIFICATION', 'se', int), model)
@@ -53,7 +55,9 @@ class MCGDTopKACDKADMMIntra:
 
         for i in range(self.config.get('SPECIFICATION', 'repeat', int)):
             self.__train(self.config, self.model, self.device, self.train_loader, self.test_loader, optimizer)
-            mask = apply_l1_prune(self.model, self.device, self.config) if self.config.get('SPECIFICATION', 'l1', bool) else apply_prune(self.model, self.device, self.config)
+            mask = apply_l1_prune(self.model, self.device, self.config) if self.config.get('SPECIFICATION', 'l1',
+                                                                                           bool) else apply_prune(
+                self.model, self.device, self.config)
             print_prune(self.model)
             self.__test(self.config, self.model, self.device, self.test_loader)
             self.__retrain(self.config, self.model, mask, self.device, self.train_loader, self.test_loader, optimizer)
@@ -63,7 +67,8 @@ class MCGDTopKACDKADMMIntra:
         if self.config.get('OTHER', 'vis_model', bool): self.visualization.visualize_model(self.model)
         if self.config.get('OTHER', 'vis_log', bool):
             self.visualization.visualize_perfstats(self.logger)
-            self.visualization.visualize_key_list(self.logger, ['top_k', 'accumulation','test_accuracy', 'test_loss', 'train_loss'])
+            self.visualization.visualize_key_list(self.logger,
+                                                  ['top_k', 'accumulation', 'test_accuracy', 'test_loss', 'train_loss'])
         if self.config.get('OTHER', 'save_model', bool): torch.save(self.model.state_dict(),
                                                                     self.config.get('OTHER', 'out_path', str))
 
@@ -121,7 +126,7 @@ class MCGDTopKACDKADMMIntra:
 
         Z, U = initialize_Z_and_U(model)
         for epoch in range(config.get('SPECIFICATION', 'epochs', int)):
-            self.global_epochs +=1
+            self.global_epochs += 1
             model.train()
             print('Epoch: {}'.format(epoch + 1))
             for batch_idx, (data, target) in enumerate(tqdm(train_loader)):
@@ -175,7 +180,6 @@ class MCGDTopKACDKADMMIntra:
             print_convergence(model, X, Z)
             self.__test(config, model, device, test_loader)
 
-
     def __test(self, config, model, device, test_loader):
         model.eval()
         test_loss = 0
@@ -184,8 +188,8 @@ class MCGDTopKACDKADMMIntra:
             for data, target in test_loader:
                 data, target = data.to(device), target.to(device)
                 output = model(data)
-                test_loss += F.nll_loss(output, target, reduction='sum').item() # sum up batch loss
-                pred = output.argmax(dim=1, keepdim=True) # get the index of the max log-probability
+                test_loss += F.nll_loss(output, target, reduction='sum').item()  # sum up batch loss
+                pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
                 correct += pred.eq(target.view_as(pred)).sum().item()
 
         test_loss /= len(test_loader.dataset)
@@ -194,7 +198,6 @@ class MCGDTopKACDKADMMIntra:
         print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
             test_loss, correct, len(test_loader.dataset),
             100. * correct / len(test_loader.dataset)))
-
 
     def __retrain(self, config, model, mask, device, train_loader, test_loader, optimizer):
         for epoch in range(config.get('SPECIFICATION', 'pre_epochs', int)):

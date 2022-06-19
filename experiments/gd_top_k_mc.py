@@ -14,6 +14,7 @@ from utils import regularized_nll_loss, admm_loss, \
 from torchvision import datasets, transforms
 from tqdm import tqdm
 
+
 class MCGDTopK:
     def __init__(self, model, train_loader, test_loader, config, logger, visualization=None):
         self.model = model
@@ -26,13 +27,15 @@ class MCGDTopK:
         self.logger = logger
         self.visualization = visualization
         self.performance_model = PerformanceModel(model, train_loader, config, overhead_gd_top_k_mc=True, logger=logger)
-        self.gradient_diversity = MonteCarloGDTopKGradients(config.get('SPECIFICATION', 'lb', int), config.get('SPECIFICATION', 'k', int),config.get('SPECIFICATION', 'se', int) , model)
+        self.gradient_diversity = MonteCarloGDTopKGradients(config.get('SPECIFICATION', 'lb', int),
+                                                            config.get('SPECIFICATION', 'k', int),
+                                                            config.get('SPECIFICATION', 'se', int), model)
 
     def dispatch(self):
         self.performance_model.print_cuda_status()
         torch.manual_seed(self.config.get('OTHER', 'seed', int))
         optimizer = Adam(self.model.parameters(), lr=self.config.get('SPECIFICATION', 'lr', float),
-                              eps=self.config.get('SPECIFICATION', 'adam_eps', float))
+                         eps=self.config.get('SPECIFICATION', 'adam_eps', float))
 
         self.__train(self.config, self.model, self.device, self.train_loader, self.test_loader, optimizer)
         self.__test(self.config, self.model, self.device, self.test_loader)
@@ -53,7 +56,8 @@ class MCGDTopK:
                 data, target = data.to(device), target.to(device)
                 optimizer.zero_grad()
                 output = model(data)
-                loss = F.nll_loss(output, target, reduction='sum')#regularized_nll_loss(config, model, output, target)
+                loss = F.nll_loss(output, target,
+                                  reduction='sum')  # regularized_nll_loss(config, model, output, target)
                 loss.backward()
                 self.gradient_diversity.norm_grads(model)
                 self.gradient_diversity.update_epoch(epoch)
@@ -73,7 +77,6 @@ class MCGDTopK:
 
             self.__test(config, model, device, test_loader)
 
-
     def __test(self, config, model, device, test_loader):
         model.eval()
         test_loss = 0
@@ -82,8 +85,8 @@ class MCGDTopK:
             for data, target in test_loader:
                 data, target = data.to(device), target.to(device)
                 output = model(data)
-                test_loss += F.nll_loss(output, target, reduction='sum').item() # sum up batch loss
-                pred = output.argmax(dim=1, keepdim=True) # get the index of the max log-probability
+                test_loss += F.nll_loss(output, target, reduction='sum').item()  # sum up batch loss
+                pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
                 correct += pred.eq(target.view_as(pred)).sum().item()
 
         test_loss /= len(test_loader.dataset)

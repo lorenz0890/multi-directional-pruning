@@ -4,9 +4,10 @@ import numpy as np
 import torch
 from thop import profile
 
+
 class PerformanceModel:
     def __init__(self, model, train_loader, config, overhead_gd_top_k=False,
-                 overhead_gd_top_k_mc=False, overhead_re_pruning=False, overhead_admm=True, logger = None):
+                 overhead_gd_top_k_mc=False, overhead_re_pruning=False, overhead_admm=True, logger=None):
 
         self.config = config
         self.logger = logger
@@ -29,10 +30,10 @@ class PerformanceModel:
                                                in_shape[2],
                                                in_shape[3]),),
                             ret_layer_info=True)[2]
-        self.flops_accumulated = 1e-38#0.0
-        self.flops_accumulated_base = 1e-38#0.0
-        self.flops_current = 1e-38#0.0
-        self.flops_current_base = 1e-38#0.0
+        self.flops_accumulated = 1e-38  # 0.0
+        self.flops_accumulated_base = 1e-38  # 0.0
+        self.flops_current = 1e-38  # 0.0
+        self.flops_current_base = 1e-38  # 0.0
 
         self.flops_accumulated_fwd = 1e-38  # 0.0
         self.flops_accumulated_base_fwd = 1e-38  # 0.0
@@ -48,11 +49,10 @@ class PerformanceModel:
         self.c_sparsity_current = 0.0
         self.l_sparsity_current = 0.0
 
-
     def __estimate_overhead_re_pruning_search(self, model):
         # https://coek.info/pdf-algorithms-54ed9513cfa623e30da35434ea7edcc833265.html
         # https://mast.queensu.ca/~andrew/notes/pdf/2010a.pdf
-        oh_search_space_iteration = 0 #TODO ensure that if multiple methods combined, accum is only accounted for once
+        oh_search_space_iteration = 0  # TODO ensure that if multiple methods combined, accum is only accounted for once
         for name, param in model.named_parameters():
             prefix = name.split('.')[0]
             postfix = name.split('.')[1]
@@ -60,13 +60,20 @@ class PerformanceModel:
                 density = (torch.count_nonzero(param) / torch.numel(param)).numpy()
                 # RE Pruning
                 if 'conv' in name or 'features' in name:
-                    oh_w0 = 2 * torch.count_nonzero(param) / self.config.get('SPECIFICATION', 'lb', int)  # Obtaining W0 from accumulated grads very lb batches
-                    oh_metric = 2 * (density * (np.prod(list(param.shape)))) / self.config.get('SPECIFICATION', 'lb', int)  # 2 times Frobenius Norm every lb batches
-                    oh_search_space_iteration += oh_w0 + oh_metric * self.config.get('SPECIFICATION', 'sample_c', int) * self.config.get('SPECIFICATION', 'scale_c', float)  # metric times attempts times scale
+                    oh_w0 = 2 * torch.count_nonzero(param) / self.config.get('SPECIFICATION', 'lb',
+                                                                             int)  # Obtaining W0 from accumulated grads very lb batches
+                    oh_metric = 2 * (density * (np.prod(list(param.shape)))) / self.config.get('SPECIFICATION', 'lb',
+                                                                                               int)  # 2 times Frobenius Norm every lb batches
+                    oh_search_space_iteration += oh_w0 + oh_metric * self.config.get('SPECIFICATION', 'sample_c',
+                                                                                     int) * self.config.get(
+                        'SPECIFICATION', 'scale_c', float)  # metric times attempts times scale
                 if 'fc' in name or 'classifier' in name:
-                    oh_w0 = 2 * torch.count_nonzero(param) / self.config.get('SPECIFICATION', 'lb',int)
-                    oh_metric = 2 * (density * (np.prod(list(param.shape)))) / self.config.get('SPECIFICATION', 'lb',int)
-                    oh_search_space_iteration += oh_w0 + oh_metric * self.config.get('SPECIFICATION', 'sample_l', int) * self.config.get('SPECIFICATION', 'scale_l', float)
+                    oh_w0 = 2 * torch.count_nonzero(param) / self.config.get('SPECIFICATION', 'lb', int)
+                    oh_metric = 2 * (density * (np.prod(list(param.shape)))) / self.config.get('SPECIFICATION', 'lb',
+                                                                                               int)
+                    oh_search_space_iteration += oh_w0 + oh_metric * self.config.get('SPECIFICATION', 'sample_l',
+                                                                                     int) * self.config.get(
+                        'SPECIFICATION', 'scale_l', float)
         return oh_search_space_iteration
 
     def __estimate_overhead_mask_computation(self, model):
@@ -76,13 +83,17 @@ class PerformanceModel:
             postfix = name.split('.')[1]
             if postfix != 'bias':
                 if 'conv' in name or 'features' in name:
-                    oh_mask_computation += (self.config.get('SPECIFICATION', 'metric_q_c', float) * self.config.get('SPECIFICATION', 'sample_c', int)
-                                            * torch.numel(param)
-                                            / self.config.get('SPECIFICATION', 'lb',int))# TODO this can still be optimized
+                    oh_mask_computation += (
+                                self.config.get('SPECIFICATION', 'metric_q_c', float) * self.config.get('SPECIFICATION',
+                                                                                                        'sample_c', int)
+                                * torch.numel(param)
+                                / self.config.get('SPECIFICATION', 'lb', int))  # TODO this can still be optimized
                 if 'fc' in name or 'classifier' in name:
-                    oh_mask_computation += (self.config.get('SPECIFICATION', 'metric_q_l', float) * self.config.get('SPECIFICATION', 'sample_l', int)
-                                            * torch.numel(param)
-                                            / self.config.get('SPECIFICATION', 'lb',int))# TODO this can still be optimized
+                    oh_mask_computation += (
+                                self.config.get('SPECIFICATION', 'metric_q_l', float) * self.config.get('SPECIFICATION',
+                                                                                                        'sample_l', int)
+                                * torch.numel(param)
+                                / self.config.get('SPECIFICATION', 'lb', int))  # TODO this can still be optimized
         return oh_mask_computation
 
     def __estimate_overhead_mask_application(self, model):
@@ -92,7 +103,8 @@ class PerformanceModel:
             postfix = name.split('.')[1]
             if postfix != 'bias':
                 if 'conv' in name or 'features' in name or 'fc' in name or 'classifier' in name:
-                    oh_mask_application += torch.numel(param) * 2 # times two if grads masked TODO this can still be optimized
+                    oh_mask_application += torch.numel(
+                        param) * 2  # times two if grads masked TODO this can still be optimized
         return oh_mask_application
 
     def __estimate_overhead_gd_top_k(self, model):
@@ -105,7 +117,8 @@ class PerformanceModel:
             if postfix != 'bias':
                 density = (torch.count_nonzero(param) / torch.numel(param)).numpy()
                 if 'conv' in name or 'features' in name or 'fc' in name or 'classifier' in name:
-                    oh_metric = (density * (np.prod(list(param.shape)))) / self.config.get('SPECIFICATION', 'lb', int)  # 1 times Frobenius Norm every lb batches
+                    oh_metric = (density * (np.prod(list(param.shape)))) / self.config.get('SPECIFICATION', 'lb',
+                                                                                           int)  # 1 times Frobenius Norm every lb batches
                     oh_search_space_iteration += oh_metric
         return oh_search_space_iteration
 
@@ -126,13 +139,13 @@ class PerformanceModel:
             postfix = name.split('.')[1]
             if postfix != 'bias':
                 if 'conv' in name or 'features' in name or 'fc' in name or 'classifier' in name:
-                    oh_admm += torch.numel(param) * 3 + 2 * (np.prod(list(param.shape))) # u, z + norm
+                    oh_admm += torch.numel(param) * 3 + 2 * (np.prod(list(param.shape)))  # u, z + norm
                     # TODO uz update
         return oh_admm
 
-    def __estimate_overhead(self, model, epoch = None):
-        #Assumptions: regularized baseline with gradient normalzation
-        oh_grad_accumulation, oh_re_pruning, oh_gd_top_k, oh_gd_top_k_mc, oh_admm= 0, 0, 0, 0, 0
+    def __estimate_overhead(self, model, epoch=None):
+        # Assumptions: regularized baseline with gradient normalzation
+        oh_grad_accumulation, oh_re_pruning, oh_gd_top_k, oh_gd_top_k_mc, oh_admm = 0, 0, 0, 0, 0
         if self.est_oh_re_pruning or self.est_oh_gd_top_k or self.est_oh_gd_top_k_mc:
             oh_grad_accumulation += self.__estimate_overhead_grad_accumulation(model).item()
         if self.est_oh_gd_top_k:
@@ -143,7 +156,8 @@ class PerformanceModel:
                 oh_re_pruning += self.__estimate_overhead_mask_computation(model)
                 oh_re_pruning += self.__estimate_overhead_mask_application(model)
             else:
-                oh_re_pruning += self.__estimate_overhead_mask_application(model) #thresholding approx. as mask aplication
+                oh_re_pruning += self.__estimate_overhead_mask_application(
+                    model)  # thresholding approx. as mask aplication
         if self.est_oh_gd_top_k_mc:
             if epoch is None or epoch % self.config.get('SPECIFICATION', 'se', int) == 0:
                 oh_gd_top_k_mc = self.__estimate_overhead_gd_top_k(model).item()
@@ -151,11 +165,9 @@ class PerformanceModel:
             oh_admm = self.__estimate_overhead_admm(model).item()
             oh_admm += self.__estimate_overhead_mask_application(model)
 
-        return (oh_gd_top_k_mc + oh_gd_top_k + oh_re_pruning + oh_grad_accumulation + oh_admm)* 1e-9 #GFLOPs
+        return (oh_gd_top_k_mc + oh_gd_top_k + oh_re_pruning + oh_grad_accumulation + oh_admm) * 1e-9  # GFLOPs
 
-
-
-    def eval(self, model, ac = 1, epoch = None, admm_mask=None):
+    def eval(self, model, ac=1, epoch=None, admm_mask=None):
         stats_batch = self.__current_flops(model, ac, admm_mask)
         self.flops_current = stats_batch[0]
         self.flops_current_base = stats_batch[1]
@@ -208,12 +220,13 @@ class PerformanceModel:
                     total_g += torch.numel(param.grad)
                     g_nonzero = None
                     if admm_mask is not None and name in admm_mask:
-                        g_nonzero = torch.count_nonzero(param.grad*admm_mask[name])
+                        g_nonzero = torch.count_nonzero(param.grad * admm_mask[name])
                     else:
                         g_nonzero = torch.count_nonzero(param.grad)
                     g_nonzero_i += g_nonzero
-                    flops_i_n_fwd = self.macs[prefix][0] * 2 * (nonzero / torch.numel(param)) # fwd
-                    flops_i_n_bwd = 2 * flops_i_n_fwd * (g_nonzero/torch.numel(param.grad)).numpy() / ac  # bwd = 2*fwd*g_sparsity/ac
+                    flops_i_n_fwd = self.macs[prefix][0] * 2 * (nonzero / torch.numel(param))  # fwd
+                    flops_i_n_bwd = 2 * flops_i_n_fwd * (
+                                g_nonzero / torch.numel(param.grad)).numpy() / ac  # bwd = 2*fwd*g_sparsity/ac
                     flops_i_fwd += flops_i_n_fwd
                     flops_i_bwd += flops_i_n_bwd
                     flops_i += flops_i_n_fwd + flops_i_n_bwd
@@ -235,9 +248,6 @@ class PerformanceModel:
                     flops_i_n_fwd = self.macs[prefix][0] * 2
                     flops_i_base += flops_i_n_fwd
 
-
-
-
         sp_t = 1 - nonzero_i / total if total > 0 else 0
         sp_c = 1 - c_nonzero_i / total_c if total_c > 0 else 0
         sp_l = 1 - l_nonzero_i / total_l if total_l > 0 else 0
@@ -248,10 +258,10 @@ class PerformanceModel:
 
     def print_cuda_status(self):
         if torch.cuda.is_available() and torch.cuda.device_count() > 0:
-            print('CUDA available, device:', torch.cuda.current_device(), torch.cuda.get_device_name(torch.cuda.current_device()))
+            print('CUDA available, device:', torch.cuda.current_device(),
+                  torch.cuda.get_device_name(torch.cuda.current_device()))
         else:
             print('CUDA not available or nor devices found')
-
 
     def print_memstats(self, batch_idx, interval):
         if batch_idx % interval == 0:
@@ -324,7 +334,7 @@ class PerformanceModel:
                 if not 'bias' in name:
                     if 'conv' in name or 'features' in name or 'fc' in name or 'classifier' in name:
                         key = 'sparsity_{}'.format(name)
-                        sparsity = (1-torch.count_nonzero(param)/torch.numel(param)).item()
+                        sparsity = (1 - torch.count_nonzero(param) / torch.numel(param)).item()
                         self.logger.log(key, sparsity)
                         if param.grad is not None:
                             key = 'sparsity_grad_{}'.format(name)
