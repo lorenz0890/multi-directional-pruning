@@ -1,5 +1,8 @@
 # A Multi Directional Approach for Accelerating Single-Node Image Classification Neural Network Training via Pruning
 
+Implementation of the methods proposed in the [Master's Thesis](https://utheses.univie.ac.at/detail/63874#) of the same title.
+
+
 ## _Train and test_
 - Install requirements:
 ```
